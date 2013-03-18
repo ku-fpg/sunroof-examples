@@ -1,0 +1,11 @@
+*~
+dist/*
+*.o
+*.hi
+*.swp
+*.swo
+.DS_Store
+sunroof-example
+Main
+.shake.database
+/examples/clock/main.js
