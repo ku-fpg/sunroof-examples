@@ -9,3 +9,8 @@ sunroof-example
 Main
 .shake.database
 /examples/clock/main.js
+sunroof-unit
+sunroof-clock
+sunroof-fib
+sunroof-canvas
+sunroof-browser-info
