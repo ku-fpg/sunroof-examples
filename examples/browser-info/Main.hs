@@ -19,7 +19,7 @@ import Language.Sunroof.JS.JQuery
 default(JSNumber, JSString, String)
 
 main :: IO ()
-main = sunroofServer (def { cometResourceBaseDir = ".." }) $ \doc -> do
+main = sunroofServer (def { cometResourceBaseDir = "../.." }) $ \doc -> do
 
   theCookie <- syncJS doc $ evaluate $ document ! cookie
   putStrLn $ "Cookie:     " ++ show theCookie
