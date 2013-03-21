@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds, ScopedTypeVariables #-}
 
 module Main where
 
@@ -27,7 +27,7 @@ clockJS :: JS A (JSFunction () ())
 clockJS = function $ \() -> do
 
   -- Renders a single line (with number) of the clock face.
-  renderClockFaceLine <- function $ \(c, u, n) -> do
+  renderClockFaceLine <- function $ \(c :: JSCanvas, u :: JSNumber, n :: JSNumber) -> do
     c # save
     -- Draw one of the indicator lines
     c # beginPath
@@ -50,7 +50,7 @@ clockJS = function $ \() -> do
     c # restore
 
   -- Renders a single clock pointer.
-  renderClockPointer <- function $ \(c, u, angle, width, len) -> do
+  renderClockPointer <- function $ \(c :: JSCanvas, u :: JSNumber, angle :: JSNumber, width :: JSNumber, len :: JSNumber) -> do
     c # save
     c # setLineCap "round"
     c # rotate angle
@@ -62,7 +62,7 @@ clockJS = function $ \() -> do
     c # closePath
     c # restore
   -- Renders the clocks pointers for hours, minutes and seconds.
-  renderClockPointers <- function $ \(c, u) -> do
+  renderClockPointers <- function $ \(c :: JSCanvas, u :: JSNumber) -> do
     (h, m, s) <- currentTime
     c # save
     c # setLineCap "round"
@@ -79,7 +79,7 @@ clockJS = function $ \() -> do
     c # restore
 
   -- Renders the complete face of the clock, without pointers.
-  renderClockFace <- function $ \(c, u) -> do
+  renderClockFace <- function $ \(c :: JSCanvas, u :: JSNumber) -> do
     c # save
     c # rotate (2 * pi / 4) -- 0 degrees is at the top
     -- Draw all hour lines.
