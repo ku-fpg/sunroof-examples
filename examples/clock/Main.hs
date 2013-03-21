@@ -32,16 +32,16 @@ clockJS = function $ \() -> do
     -- Draw one of the indicator lines
     c # beginPath
     c # moveTo (0, -u * 1.0)
-    ifB (n `mod` 5 ==* (0 :: JSNumber))
+    ifB (n `mod` 5 ==* 0)
         (c # lineTo (0, -u * 0.8)) -- Minute line
         (c # lineTo (0, -u * 0.9)) -- Hour line
-    ifB (n `mod` 15 ==* (0 :: JSNumber))
+    ifB (n `mod` 15 ==* 0)
         (c # setLineWidth 8) -- Quarter line
         (c # setLineWidth 3) -- Non-Quarter line
     c # stroke
     c # closePath
     -- Draw of the hour numbers
-    ifB (n `mod` 5 ==* (0 :: JSNumber))
+    ifB (n `mod` 5 ==* 0)
         (do
           c # translate (-u * 0.75, 0)
           c # rotate (-2 * pi / 4)
