@@ -60,9 +60,15 @@ import Test.QuickCheck.State ( State( .. )) -- numSuccessTests ) )
 import Control.Concurrent.ParallelIO.Local hiding (parallelInterleaved)
 import Control.Concurrent.ParallelIO.Local (parallelInterleaved)
 import qualified Control.Exception as E
+import Paths_sunroof_examples
 
 main :: IO ()
-main = sunroofServer (def { sunroofVerbose = 0, cometResourceBaseDir = "../.." }) $ \ doc0 -> do
+main = do
+   dataDir <- getDataDir
+   sunroofServer (def { sunroofVerbose = 0
+                      , cometResourceBaseDir = dataDir
+                      , cometIndexFile = "examples/unit/index.html"
+                      }) $ \ doc0 -> do
         let do_log = False
 --        let te_style = TestWithTiming
         let te_style = TestInPar 4

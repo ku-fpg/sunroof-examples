@@ -11,11 +11,19 @@ import Language.Sunroof.Server
 import Language.Sunroof.JS.Canvas
 import Language.Sunroof.JS.Browser
 import Language.Sunroof.JS.JQuery
+import Paths_sunroof_examples
 
 -- This is a transcription of the http://www.html5canvastutorials.com/ demos/tutorials.
 
 main :: IO ()
-main = sunroofServer (def { cometResourceBaseDir = "../.." }) $ \ doc -> do
+main = do
+ dataDir <- getDataDir
+ sunroofServer (def { sunroofVerbose = 0
+                      , cometResourceBaseDir = dataDir
+                      , cometIndexFile = "examples/canvas/index.html"
+                      }) main2
+
+main2 doc = do
 
   ch <- rsyncJS doc $ newChan
   asyncJS doc $ do

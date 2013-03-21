@@ -12,10 +12,16 @@ import Language.Sunroof.Server
 import Language.Sunroof.JS.Canvas
 import Language.Sunroof.JS.Browser ( alert )
 import Language.Sunroof.JS.JQuery
+import Paths_sunroof_examples
 
 main :: IO ()
-main = sunroofServer (def { cometResourceBaseDir = "../.." }) $ \doc -> do
-  asyncJS doc prog
+main = do
+ dataDir <- getDataDir
+ sunroofServer (def { sunroofVerbose = 0
+                      , cometResourceBaseDir = dataDir
+                      , cometIndexFile = "examples/fib/index.html"
+                      }) $ \ doc -> asyncJS doc prog
+
 
 prog :: JSB ()
 prog = do

@@ -6,7 +6,28 @@ Copyright:           (c) 2013 The University of Kansas
 Build-type:          Simple
 Cabal-version:       >= 1.10
 
+data-files:
+-- js
+    js/jquery-json.js
+    js/jquery-ui.js
+    js/jquery.js
+
+-- css
+    css/ui-lightness/*.css 
+    css/ui-lightness/images/*.png
+
+-- And the individual tests' index files.
+    examples/browser-info/index.html
+    examples/fib/index.html
+    examples/clock/index.html
+    examples/canvas/index.html
+    examples/unit/index.html
+
+Extra-source-files:
+    README.md
+
 Executable sunroof-browser-info
+    Other-Modules:       Paths_sunroof_examples
     Build-Depends: 
          base                   >= 4.6,
          sunroof-compiler       == 0.1,
@@ -17,19 +38,6 @@ Executable sunroof-browser-info
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/browser-info
-    Ghc-Options: -threaded
-    default-language:    Haskell2010
-
-
-Executable sunroof-clock
-    Build-Depends: 
-         base                   >= 4.6,
-         sunroof-compiler       == 0.1,
-         Boolean                >= 0.2,
-         data-default           >= 0.5
-                  
-    Main-is: Main.hs
-    Hs-Source-Dirs: examples/clock
     Ghc-Options: -threaded
     default-language:    Haskell2010
 
@@ -46,6 +54,19 @@ Executable sunroof-canvas
     Ghc-Options: -threaded
     default-language:    Haskell2010
 
+Executable sunroof-clock
+    Build-Depends: 
+         base                   >= 4.6,
+         sunroof-compiler       == 0.1,
+         Boolean                >= 0.2,
+         data-default           >= 0.5
+                  
+    Main-is: Main.hs
+    Hs-Source-Dirs: examples/clock
+    Ghc-Options: -threaded
+    default-language:    Haskell2010
+
+
 Executable sunroof-fib
     Build-Depends: 
          base                   >= 4.6,
@@ -61,6 +82,7 @@ Executable sunroof-fib
     default-language:    Haskell2010
 
 Executable sunroof-unit
+    Other-Modules:       Paths_sunroof_examples
     Build-Depends: 
          sunroof-compiler       == 0.1,
          sunroof-server         == 0.1,

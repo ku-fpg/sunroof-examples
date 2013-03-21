@@ -15,12 +15,19 @@ import Language.Sunroof.Server
 import Language.Sunroof.JS.Canvas
 import Language.Sunroof.JS.Browser
 import Language.Sunroof.JS.JQuery
+import Paths_sunroof_examples
 
 default(JSNumber, JSString, String)
 
 main :: IO ()
-main = sunroofServer (def { cometResourceBaseDir = "../.." }) $ \doc -> do
+main = do
+ dataDir <- getDataDir
+ sunroofServer (def { sunroofVerbose = 0
+                      , cometResourceBaseDir = dataDir
+                      , cometIndexFile = "examples/browser-info/index.html"
+                      }) main2
 
+main2 doc = do
   theCookie <- syncJS doc $ evaluate $ document ! cookie
   putStrLn $ "Cookie:     " ++ show theCookie
 
