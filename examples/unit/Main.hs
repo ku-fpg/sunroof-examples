@@ -345,9 +345,9 @@ runTests doc all_tests = do
                                 "<td class=\"count\">" ++ {-show n-} show 0 ++ "</td>" ++
                                 "<td class=\"progress\"><div class=\"progressbar\"> </div></td><th>"
                                         ++ msg ++ "</th>" ++
-                                                "<td class=\"data\"></td>" ++
-                                                "<td class=\"data\"></td>" ++
-                                                "<td class=\"data\"></td>" ++
+                                                "<td class=\"data data1\"></td>" ++
+                                                "<td class=\"data data2\"></td>" ++
+                                                "<td class=\"data data3\"></td>" ++
                                                 "<td class=\"space\">&nbsp;</td>" ++
                                                 "</tr>"
                               | (j::Int,Test n msg _) <- [1..] `zip` tests
@@ -355,11 +355,22 @@ runTests doc all_tests = do
            | (i::Int,(txt,tests)) <- [1..] `zip` all_tests
            ]
 
-  section "Summary" $ "<tr class=\"" ++ pbName 0 0 ++ "\"><td class=\"progress\"></td><th></th>" ++
-                                                "<td class=\"data\"></td>" ++
-                                                "<td class=\"data\"></td>" ++
-                                                "<td class=\"data\"></td>" ++
-                                                "</tr>"
+  section "Summary" $ "<tr class=\"" ++ pbName 0 0 ++ "\">" ++
+                                "<td class=\"count\"></td>" ++
+                                "<td class=\"progress\"></td><th></th>" ++
+                                "<td class=\"data data1\"></td>" ++
+                                "<td class=\"data data2\"></td>" ++
+                                "<td class=\"data data3\"></td>" ++
+                                "<td class=\"space\">&nbsp;</td>" ++
+                                "</tr>" ++
+                                "<tr>" ++
+                                "<td class=\"count\"></td>" ++
+                                "<td class=\"progress\"></td><th></th>" ++
+                                "<td class=\"data data1\">(compile)</td>" ++
+                                "<td class=\"data data2\">(send)</td>" ++
+                                "<td class=\"data data3\">(run)</td>" ++
+                                "<td class=\"space\">&nbsp;</td>" ++
+                                "</tr>"
 
   let casesPerTest :: Int
       casesPerTest = 100
@@ -494,7 +505,7 @@ writeTimings doc i j t = asyncJS (srEngine doc) $ do
         return ()
   where
         pnt n v = do
-                p <- pbObject i j $ \ nd -> "." ++ nd ++ " td:eq(" ++ show n ++ ")"
+                p <- pbObject i j $ \ nd -> "." ++ nd ++ " td.data" ++ show n
                 p # JQuery.setHtml (js $ Numeric.showFFloat (Just 2) v "s")
 
 -- -----------------------------------------------------------------------
