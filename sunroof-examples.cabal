@@ -100,3 +100,14 @@ Executable sunroof-unit
     Ghc-Options: -threaded
     default-language:    Haskell2010
 
+Executable sunroof-inplace-shaker
+    Build-Depends: 
+        base                   >= 4.6,
+        process                >= 1.1,
+        directory              >= 1.2,
+        shake >= 0.10
+
+    Main-is: Shake.hs
+    Ghc-Options: -threaded
+    default-language:    Haskell2010
+ 

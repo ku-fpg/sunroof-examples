@@ -9,7 +9,8 @@ import Data.List
 
 -- local repos to use; later look at the srcs to figure out what the external repo does
 repos :: [String]
-repos = [ ".."  -- the sunroof compiler
+repos = [ "../sunroof-compiler"  -- the sunroof compiler
+        , "../sunroof-server"
         ]
 
 findExecs :: [String] -> [(String,Exec)]
@@ -56,12 +57,23 @@ main2 [] execs = do
 -- to clean, use cabal clean
 
 main2 xs execs = shake (shakeOptions) $ do
+        let autogen = "inplace-autogen/Paths_sunroof_examples.hs"
         let targets =
              [ "dist" </> "build" </> nm </> nm
              | (nm,ex) <- execs
              , xs == ["all" ]|| nm `elem` xs
              ]
+        want [autogen]
+
         want targets
+
+        autogen *> \ out ->  do
+                pwd <- liftIO $ getCurrentDirectory
+                writeFile' out $ unlines
+                  [ "module Paths_sunroof_examples where"
+                  , "getDataDir :: IO String"
+                  , "getDataDir = return " ++ show pwd
+                  ]
 
         targets **> \ out -> do
                 liftIO $ print out
@@ -70,11 +82,18 @@ main2 xs execs = shake (shakeOptions) $ do
                 let Just exec = lookup nm execs
                 liftIO $ print exec
 
-                need [nm </> the_main exec]
-                -- This should be read from the external repo properly
-                need ["../sunroof-compiler.cabal"]
-                files <- getDirectoryFiles "../Language" ["//*.hs"]
-                need ["../Language" </> file | file <- files ]
+                need [ the_dir exec </> the_main exec]
+
+                sequence_
+                   [ do files <- getDirectoryFiles repo ["*.cabal"]
+                        liftIO $ print files
+                        need $ map (repo </>) files
+                        files <- getDirectoryFiles repo ["//*.hs"]
+                        liftIO $ print files
+                        need $ map (repo </>) files
+                   | repo <- repos
+                   ]
+
                 liftIO $ putStrLn $ "Building: " ++ out
                 -- compile inside the build dir
                 let cache = takeDirectory out </> "cache"
@@ -84,5 +103,5 @@ main2 xs execs = shake (shakeOptions) $ do
                            "-hidir",cache,"-odir",cache,
                            "-dcore-lint",
                            "-o", out,
-                           "-i" ++ concat (intersperse  ":"  (the_dir exec : repos))
+                           "-i" ++ concat (intersperse  ":"  (the_dir exec : "inplace-autogen" : repos))
                            ]
