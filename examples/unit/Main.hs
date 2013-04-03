@@ -70,8 +70,8 @@ main = do
                       , cometIndexFile = "examples/unit/index.html"
                       }) $ \ doc0 -> do
         let do_log = False
---        let te_style = TestWithTiming
-        let te_style = TestInPar 4
+        let te_style = TestWithTiming
+--        let te_style = TestInPar 4
         doc <- case te_style of
                   TestWithTiming -> newTimings doc0
                   _ -> return doc0
@@ -303,7 +303,7 @@ checkMVars doc sz write start _seed = monadicIO $ do
 runFib :: TestEngine -> Int -> Property
 runFib doc n = monadicIO $ do
   r' <- run $ syncJS (srEngine doc) $ do
-        fib <- jsfix $ \ fib -> function $ \ (n :: JSNumber) -> do
+        fib <- fixJS $ \ fib -> function $ \ (n :: JSNumber) -> do
                 ifB (n <* 2)
                     (return (1 :: JSNumber))
                     (liftM2 (+) (apply fib (n - 1)) (apply fib (n - 2)))
