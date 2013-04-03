@@ -56,7 +56,7 @@ prog = do
           switchB _   []         def = def
           switchB tag ((a,b):xs) def = ifB (tag ==* a) b (switchB tag xs def)
 
-      fib <- fixJSA $ \ fib (n :: JSNumber) -> do
+      fib <- liftJS $ jsfix $ \ fib -> function $ \ (n :: JSNumber) -> do
           ifB (n <* 2)
               (return (1 :: JSNumber))
               (liftM2 (+) (apply fib (n - 1)) (apply fib (n - 2)))

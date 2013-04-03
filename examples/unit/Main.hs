@@ -303,7 +303,7 @@ checkMVars doc sz write start _seed = monadicIO $ do
 runFib :: TestEngine -> Int -> Property
 runFib doc n = monadicIO $ do
   r' <- run $ syncJS (srEngine doc) $ do
-        fib <- fixJSA $ \ fib (n :: JSNumber) -> do
+        fib <- jsfix $ \ fib -> function $ \ (n :: JSNumber) -> do
                 ifB (n <* 2)
                     (return (1 :: JSNumber))
                     (liftM2 (+) (apply fib (n - 1)) (apply fib (n - 2)))
