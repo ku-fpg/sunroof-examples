@@ -135,7 +135,7 @@ web_app doc = do
                                                                               ; return v })
                 ])
           , ("Performance",
-                [ Test   1 ("Fib " ++ show n)           (runFib doc n) | n <- [10,      30]
+                [ Test   1 ("Fib " ++ show n)           (runFib doc n) | n <- [10 ] ++ [30 .. 35]
                 ])
           ]
 
