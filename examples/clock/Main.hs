@@ -17,7 +17,7 @@ import Language.Sunroof.JS.JQuery
 import Language.Sunroof.JS.Date
 
 main :: IO ()
-main = sunroofCompileJS def "main" clockJS >>= writeFile "main.js"
+main = sunroofCompileJSA def "main" clockJS >>= writeFile "main.js"
 
 default(JSNumber, JSString, String)
 
