@@ -59,7 +59,8 @@ Executable sunroof-clock
          base                   >= 4.6,
          sunroof-compiler       == 0.1,
          Boolean                >= 0.2,
-         data-default           >= 0.5
+         data-default           >= 0.5,
+         filepath               >= 0.1
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/clock

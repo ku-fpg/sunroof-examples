@@ -9,6 +9,8 @@ import Data.Boolean
 import Data.Boolean.Numbers
 import Data.Default
 
+import System.FilePath ( (</>) )
+
 import Language.Sunroof
 import Language.Sunroof.Types
 import Language.Sunroof.JS.Canvas
@@ -16,8 +18,16 @@ import Language.Sunroof.JS.Browser hiding ( eval )
 import Language.Sunroof.JS.JQuery
 import Language.Sunroof.JS.Date
 
+import Paths_sunroof_examples
+
 main :: IO ()
-main = sunroofCompileJSA def "main" clockJS >>= writeFile "main.js"
+main = do
+  -- Copy the index HTML and jquery.js to the current directory.
+  dataDir <- getDataDir
+  readFile (dataDir </> "js/jquery.js") >>= writeFile "jquery.js"
+  readFile (dataDir </> "examples/clock/index.html") >>= writeFile "clock.html"
+  -- Compile the JavaScript and also write it to the current directory.
+  sunroofCompileJSA def "main" clockJS >>= writeFile "main.js"
 
 default(JSNumber, JSString, String)
 
