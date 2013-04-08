@@ -17,7 +17,7 @@ import Language.Sunroof.JS.JQuery
 import Language.Sunroof.JS.Date
 
 main :: IO ()
-main = sunroofCompileJS def "main" clockJS >>= writeFile "main.js"
+main = sunroofCompileJSA def "main" clockJS >>= writeFile "main.js"
 
 default(JSNumber, JSString, String)
 
@@ -112,7 +112,7 @@ clockJS = function $ \() -> do
     c # restore
     return ()
 
-  window # setInterval renderClock 1000
+  window # setInterval (goto renderClock) 1000
   -- and draw one now, rather than wait till later
   goto renderClock ()
 
