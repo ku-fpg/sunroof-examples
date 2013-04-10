@@ -139,6 +139,9 @@ web_app doc = do
                                                                               ; v # SR.takeMVar
                                                                               ; return v })
                 ])
+          , ("Regression",
+                [ Test 1 "Issue #29: Assignment Bug" (regressionAssignmentIssue29 doc)
+                ])
           , ("Performance",
                 [ Test   1 ("Fib " ++ show n)           (runFib doc n) | n <- [10 ] ++ [30 .. 35]
                 ])
@@ -352,6 +355,22 @@ runFib doc n = monadicIO $ do
   let r = fromIntegral (fib n)
   assert $ r `deltaEqual` r'
 
+-- -----------------------------------------------------------------------
+-- Regression Tests
+-- -----------------------------------------------------------------------
+
+-- | Regression test for the problem that occured in issue 29
+--   (<https://github.com/ku-fpg/sunroof-compiler/issues/29>).
+regressionAssignmentIssue29 :: TestEngine -> Property
+regressionAssignmentIssue29 doc = monadicIO $ do
+  () <- run $ syncJS (srEngine doc) $ do
+    v :: JSRef (JSContinuation ()) <- newJSRef (cast nullJS)
+    -- Cause of Issue 29:
+    -- Produces: function() { return (v86873["val"])(); } = null;
+    -- Instead of: v86873["val"] = null;
+    return ()
+  return ()
+    --s <- newJSRef start
 
 -- -----------------------------------------------------------------------
 -- Test execution
