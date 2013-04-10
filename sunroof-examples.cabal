@@ -98,6 +98,7 @@ Executable sunroof-unit
          base                   >= 4.3.1 && < 5,
          parallel-io            >= 0.3.3,
          QuickCheck             >= 2.6,
+         containers             >= 0.5,
          stm                    >= 2.4.2,
          random                 >= 1.0.1.1
          

@@ -19,6 +19,7 @@ import Data.List
 import Data.Char ( isControl, isAscii )
 import Data.Maybe ( isJust )
 import Data.Boolean
+import qualified Data.Map as Map
 
 import qualified Numeric
 
@@ -99,7 +100,7 @@ web_app doc = do
         let tA = ThreadProxy :: ThreadProxy A
         let tB = ThreadProxy :: ThreadProxy B
 
-        runTests doc $ take 100 $ drop 0 $
+        runTests doc $ take 1 $ drop 4 $
           [ ("Constants",
                 [ Test 100 "Constant Numbers" (checkConstNumber doc :: Double -> Property)
 -- Comment out until we return SunroofArgument, vs just Sunroofs.
@@ -123,6 +124,10 @@ web_app doc = do
                 , Test 100 "Constant Booleans" (checkDownlinkUplink' doc (==) :: Bool -> Property)
                 , Test 100 "Constant Numbers"  (checkDownlinkUplink' doc deltaEqual :: Double -> Property)
                 ])
+          , ("Data Structures",
+                [ Test 100 "Array"                    (checkArbitraryArray doc)
+                ]
+            )
           , ("Channels and MVars",
                 [ Test  10 "Chan (rand)"              (checkArbitraryChan_Int doc False SR.newChan SR.writeChan SR.readChan)
                 , Test  10 "Chan (write before read)" (checkArbitraryChan_Int doc True SR.newChan SR.writeChan SR.readChan)
@@ -219,7 +224,7 @@ checkArbitraryArray_Int doc seed = monadicIO $ do
   dat  :: [Int] <- fmap (fmap (`Prelude.rem` 100)) $ pick $ vector sz
 -}
 
-checkDownlinkUplink' :: forall a . 
+checkDownlinkUplink' :: forall a .
                         ( SunroofValue a
                         , Sunroof (ValueOf a)
                         , SunroofArgument (ValueOf a)
@@ -227,7 +232,7 @@ checkDownlinkUplink' :: forall a .
                         , a ~ ResultOf (ValueOf a)
                         ) => TestEngine
                           -> (a -> a -> Bool)
-                          -> a 
+                          -> a
                           -> Property
 checkDownlinkUplink' doc equals value = monadicIO $ do
   (down :: Downlink (ValueOf a)) <- run $ newDownlink (srEngine doc)
@@ -239,11 +244,11 @@ checkDownlinkUplink :: ( SunroofValue a
                        , SunroofArgument (ValueOf a)
                        , SunroofResult (ValueOf a)
                        , a ~ ResultOf (ValueOf a)
-                       ) => TestEngine 
+                       ) => TestEngine
                          -> (a -> a -> Bool)
                          -> Downlink (ValueOf a)
                          -> Uplink (ValueOf a)
-                         -> a 
+                         -> a
                          -> Property
 checkDownlinkUplink doc equals down up value = monadicIO $ do
   run $ putDownlink down (return $ js value)
@@ -337,7 +342,19 @@ checkMVars doc sz write start _seed = monadicIO $ do
   assert $ round res == sz
 
 
-
+checkArbitraryArray
+        :: TestEngine
+        -> Property
+checkArbitraryArray doc = monadicIO $ do
+  (cons,ops) :: (ArrayConstructor SmallNat,[ArrayOp SmallNat]) <- pick (genArrayOps (10,10))
+{-
+  run $ print (cons,ops)
+  res <- run $ syncJS (srEngine doc) $ do
+        arr <- case cons of
+                 NewEmptyArray ->
+        | NewArray [n]
+-}
+  assert $ True
 
 -- | Check if simple arithmetic expressions with one operator produce
 --   the same value after sync.
@@ -656,3 +673,84 @@ boolExprGen n = frequency [(1, boolGen), (3, binaryGen), (1, ifGen), (1, unaryGe
 geometricMean :: Floating a => [a] -> a
 geometricMean xs = exp ((1 / n) * sum (map log xs))
   where n = fromIntegral (length xs)
+
+data ArrayConstructor n
+        = NewEmptyArray
+        | NewArray [n]
+  deriving Show
+
+data Val n = Val n | Undefined
+        deriving (Eq, Ord, Show)
+
+data ArrayOp n
+        = LookupArray Int               (Maybe (Val n))  -- n is the expected result
+        | InsertArray Int n
+        | LengthArray                   Int                 -- number of elements
+        | ElemsArray                    [Val n]
+  deriving Show
+
+
+genArrayOps :: Arbitrary n => (Int,Int) -> Gen (ArrayConstructor n,[ArrayOp n])
+genArrayOps (sz1,sz2) = do
+   cons <- oneof
+        [ return NewEmptyArray
+        , do n <- choose (0,sz1)
+             vs <- vector n
+             return $ NewArray vs
+        ]
+
+   n <- choose (0,sz2)   -- how many operations?
+
+   let next i mp c = do
+              rest <- pick (i - 1) mp
+              return (c : rest)
+
+       pick 0 mp = return []
+       pick i mp = oneof
+         [ do ok :: Bool <- arbitrary
+              k <- if (ok && not (Map.null mp))
+                         then elements (Map.keys mp)
+                         else choose (-10,100)       -- This *might* hit; see test below
+              next i mp (LookupArray k (Map.lookup k mp))
+         , do k <- choose (-10,100)
+              v <- arbitrary
+              let mp1 = if k < 0 then mp
+                                 else Map.insert k (Val v) mp `Map.union`
+                                      Map.fromList [ (k,Undefined) | k <- [(Map.size mp)..(k-1)]]
+
+              next i mp1 (InsertArray k v)
+         , do next i mp (ElemsArray (Map.elems mp))
+         , do next i mp (LengthArray (Map.size mp))
+         ]
+
+   ops <- pick n (Map.fromList $ zip [0..] (case cons of
+                                              NewEmptyArray -> []
+                                              NewArray xs -> map Val xs))
+
+   return (cons,ops)
+
+test = quickCheck (forAll (genArrayOps (10,10) :: Gen (ArrayConstructor SmallNat,[ArrayOp SmallNat]))
+                  $ \ c -> P.label (show c) True)
+
+
+prop :: ArrayConstructor Int -> Property
+prop c = P.label (show c) $ True
+
+newtype SmallNat = SmallNat Int
+   deriving (Eq, Ord)
+
+instance Show SmallNat where
+   show (SmallNat n) = show n
+
+instance Arbitrary SmallNat where
+  arbitrary = fmap (SmallNat . fromInteger) $ choose (0::Integer,10000)
+
+------------------------------------------------------
+
+data TestMap k a
+        = InsertMap k a
+        | LookupMap k
+        | SizeMap
+        | DeleteMap k
+
+
