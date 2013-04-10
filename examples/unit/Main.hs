@@ -118,6 +118,11 @@ web_app doc = do
                 [ Test  10 "if/then/else -> Int (A)"   (checkArbitraryIfThenElse_Int doc tA)
                 , Test  10 "if/then/else -> Int (B)"   (checkArbitraryIfThenElse_Int doc tB)
                 ])
+          , ("Uplink & Downlink",
+                [ Test 100 "Constant String"   (checkDownlinkUplink' doc (==) :: String -> Property)
+                , Test 100 "Constant Booleans" (checkDownlinkUplink' doc (==) :: Bool -> Property)
+                , Test 100 "Constant Numbers"  (checkDownlinkUplink' doc deltaEqual :: Double -> Property)
+                ])
           , ("Channels and MVars",
                 [ Test  10 "Chan (rand)"              (checkArbitraryChan_Int doc False SR.newChan SR.writeChan SR.readChan)
                 , Test  10 "Chan (write before read)" (checkArbitraryChan_Int doc True SR.newChan SR.writeChan SR.readChan)
@@ -211,6 +216,39 @@ checkArbitraryArray_Int doc seed = monadicIO $ do
   dat  :: [Int] <- fmap (fmap (`Prelude.rem` 100)) $ pick $ vector sz
 -}
 
+checkDownlinkUplink' :: forall a . 
+                        ( SunroofValue a
+                        , Sunroof (ValueOf a)
+                        , SunroofArgument (ValueOf a)
+                        , SunroofResult (ValueOf a)
+                        , a ~ ResultOf (ValueOf a)
+                        ) => TestEngine
+                          -> (a -> a -> Bool)
+                          -> a 
+                          -> Property
+checkDownlinkUplink' doc equals value = monadicIO $ do
+  (down :: Downlink (ValueOf a)) <- run $ newDownlink (srEngine doc)
+  (up :: Uplink (ValueOf a)) <- run $ newUplink (srEngine doc)
+  return $ checkDownlinkUplink doc equals down up
+
+checkDownlinkUplink :: ( SunroofValue a
+                       , Sunroof (ValueOf a)
+                       , SunroofArgument (ValueOf a)
+                       , SunroofResult (ValueOf a)
+                       , a ~ ResultOf (ValueOf a)
+                       ) => TestEngine 
+                         -> (a -> a -> Bool)
+                         -> Downlink (ValueOf a)
+                         -> Uplink (ValueOf a)
+                         -> a 
+                         -> Property
+checkDownlinkUplink doc equals down up value = monadicIO $ do
+  run $ putDownlink down (return $ js value)
+  run $ asyncJS (srEngine doc) $ do
+    v <- getDownlink down
+    up # putUplink v
+  value' <- run $ getUplink up
+  assert $ value `equals` value'
 
 checkArbitraryChan_Int
         :: TestEngine
