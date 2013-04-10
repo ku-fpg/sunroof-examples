@@ -100,7 +100,7 @@ web_app doc = do
         let tA = ThreadProxy :: ThreadProxy A
         let tB = ThreadProxy :: ThreadProxy B
 
-        runTests doc $ take 1 $ drop 4 $
+        runTests doc $ take 100 $ drop 0 $
           [ ("Constants",
                 [ Test 100 "Constant Numbers" (checkConstNumber doc :: Double -> Property)
 -- Comment out until we return SunroofArgument, vs just Sunroofs.
