@@ -93,7 +93,7 @@ clockJS = function $ \() -> do
     c # save
     c # rotate (2 * pi / 4) -- 0 degrees is at the top
     -- Draw all hour lines.
-    array [1..60::Int] # forEach $ \n -> do
+    (array [1..60::Int] >>=) $ forEach $ \n -> do
       c # save
       c # rotate ((2 * pi / 60) * n)
       renderClockFaceLine $$ (c, u, n)
