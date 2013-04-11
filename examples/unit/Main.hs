@@ -347,14 +347,64 @@ checkArbitraryArray
         -> Property
 checkArbitraryArray doc = monadicIO $ do
   (cons,ops) :: (ArrayConstructor SmallNat,[ArrayOp SmallNat]) <- pick (genArrayOps (10,10))
-{-
-  run $ print (cons,ops)
-  res <- run $ syncJS (srEngine doc) $ do
+
+--  run $ print (cons,ops)
+
+  res :: Bool <- run $ syncJS (srEngine doc) $ do
         arr <- case cons of
-                 NewEmptyArray ->
-        | NewArray [n]
+                 NewEmptyArray -> empty
+                 NewArray xs   -> array (fmap (\ (SmallNat n) -> n) xs)
+        let km = foldr (\ (op :: ArrayOp SmallNat) (km :: JSA (JSFunction () JSBool)) -> do
+                           function $ \ () -> do
+                               k <- km
+                               case op of
+                                 LookupArray n ok -> do
+                                   v <- evaluate $ arr ! index (js n)
+                                   case ok of
+                                     Just (Val n) -> do
+                                          ifB (js n /=* v)
+                                              (return false)
+                                              (k $$ ())
+                                     _ -> ifB (cast v /=* object "undefined")
+                                              (return false)
+                                              (k $$ ())
+                                 InsertArray key v -> do
+                                   arr # index (js key) := js v
+                                   k $$ ()
+                                 LengthArray n -> do
+                                   v <- evaluate $ arr ! A.length'
+                                   ifB (v /=* js n)
+                                       (return false)
+                                       (k $$ ())
+                                 ElemsArray xs -> do
+                                   bs <- sequence [ do v <- evaluate $ arr ! index (js n)
+                                                       case x of
+                                                         Val v' -> return (v ==* js v')
+                                                         _      -> return (cast v ==* object "undefined")
+                                                  | (n :: Int,x) <- [0..] `zip` xs ]
+                                   ifB (foldr (&&*) true bs)
+                                       (k $$ ())
+                                       (return false)
+                         )
+                         (function $ \ () -> return true)
+                         ops
+{-
+                a        sequence [ case op of
+                   data ArrayOp n
+        = LookupArray Int               (Maybe (Val n))  -- n is the expected result
+        | InsertArray Int n
+        | LengthArray                   Int                 -- number of elements
+        | ElemsArray                    [Val n]
+
+                 | op <- ops
+                 ]
 -}
-  assert $ True
+        return ()
+        k <- km
+        -- returns true or false
+        k $$ ()
+
+  assert $ res
 
 -- | Check if simple arithmetic expressions with one operator produce
 --   the same value after sync.
@@ -738,6 +788,10 @@ prop c = P.label (show c) $ True
 
 newtype SmallNat = SmallNat Int
    deriving (Eq, Ord)
+
+instance SunroofValue SmallNat where
+   type ValueOf SmallNat = JSNumber
+   js (SmallNat n) = js n
 
 instance Show SmallNat where
    show (SmallNat n) = show n
