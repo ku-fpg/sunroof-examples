@@ -8,8 +8,11 @@ License-file:        LICENSE
 Author:              Andrew Gill <andygill@ku.edu>, Jan Bracker <jbra@informatik.uni-kiel.de>
 Maintainer:          Jan Bracker <jbra@informatik.uni-kiel.de>
 Copyright:           (c) 2013 The University of Kansas
+Category:            Web
 Build-type:          Simple
 Cabal-version:       >= 1.10
+Description:
+  Example applications of the sunroof-compiler and sunroof-server package.
 
 data-files:
 -- js
@@ -30,6 +33,10 @@ data-files:
 
 Extra-source-files:
     README.md
+
+source-repository head
+  type:     git
+  location: git://github.com/ku-fpg/sunroof-examples.git
 
 Executable sunroof-browser-info
     Other-Modules:       Paths_sunroof_examples
