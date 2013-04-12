@@ -359,7 +359,7 @@ checkArbitraryArray doc = monadicIO $ do
                                k <- km
                                case op of
                                  LookupArray n ok -> do
-                                   v <- evaluate $ arr ! index (js n)
+                                   v <- evaluate $ lookup' (js n) arr
                                    case ok of
                                      Just (Val n) -> do
                                           ifB (js n /=* v)
@@ -369,7 +369,7 @@ checkArbitraryArray doc = monadicIO $ do
                                               (return false)
                                               (k $$ ())
                                  InsertArray key v -> do
-                                   arr # index (js key) := js v
+                                   arr # insert' (js key) (js v)
                                    k $$ ()
                                  LengthArray n -> do
                                    v <- evaluate $ arr ! A.length'
