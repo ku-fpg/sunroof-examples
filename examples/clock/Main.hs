@@ -31,7 +31,7 @@ main = do
 
 default(JSNumber, JSString, String)
 
-type instance BooleanOf () = JSBool
+-- type instance BooleanOf () = JSBool
 
 clockJS :: JS A (JSFunction () ())
 clockJS = function $ \() -> do
