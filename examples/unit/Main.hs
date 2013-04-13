@@ -37,6 +37,7 @@ import Language.Sunroof.JS.Bool
 import Language.Sunroof.JS.Object
 import Language.Sunroof.JS.Array as A
 import Language.Sunroof.Classes
+import qualified Language.Sunroof.JS.Map as M
 
 import System.Random
 import System.IO
@@ -126,6 +127,7 @@ web_app doc = do
                 ])
           , ("Data Structures",
                 [ Test 100 "Array"                    (checkArbitraryArray doc)
+                , Test 100 "Map"                      (checkArbitraryMap doc)
                 ]
             )
           , ("Channels and MVars",
@@ -406,6 +408,59 @@ checkArbitraryArray doc = monadicIO $ do
 
   assert $ res
 
+checkArbitraryMap
+        :: TestEngine
+        -> Property
+checkArbitraryMap doc = monadicIO $ do
+  ops :: [MapOp SmallString SmallNat] <- pick (genMapOps 10)
+
+  run $ print ops
+
+  res :: Bool <- run $ syncJS (srEngine doc) $ do
+        mp <- M.newMap
+        let km = foldr (\ (op :: MapOp SmallString SmallNat) (km :: JSA (JSFunction () JSBool)) -> do
+                           function $ \ () -> do
+                               k <- km
+                               case op of
+                                 LookupMap key ok -> do
+                                   v <- M.lookup (js key) mp
+                                   case ok of
+                                     Val n -> do
+                                          ifB (js n /=* v)
+                                              (return false)
+                                              (k $$ ())
+                                     _ -> ifB (cast v /=* object "undefined")
+                                              (return false)
+                                              (k $$ ())
+                                 InsertMap key v -> do
+                                   mp # M.insert (js key) (js v)
+                                   k $$ ()
+                                 SizeMap n -> do
+                                   v <- M.size mp
+                                   ifB (v /=* js n)
+                                       (return false)
+                                       (k $$ ())
+{-
+                                 ElemsMap xs -> do
+                                   arr <- M.elems mp
+                                   bs <- sequence [ do v <- evaluate $ arr ! index (js n)
+                                                       case x of
+                                                         Val v' -> return (v ==* js v')
+                                                         _      -> return (cast v ==* object "undefined")
+                                                  | (n :: Int,x) <- [0..] `zip` xs ]
+                                   ifB (foldr (&&*) true bs)
+                                       (k $$ ())
+                                       (return false)
+-}
+                         )
+                         (function $ \ () -> return true)
+                         ops
+        return ()
+        k <- km
+        -- returns true or false
+        k $$ ()
+
+  assert $ res
 -- | Check if simple arithmetic expressions with one operator produce
 --   the same value after sync.
 runFib :: TestEngine -> Int -> Property
@@ -449,8 +504,10 @@ runTests :: TestEngine -> [(String,[Test])] -> IO ()
 runTests doc all_tests = do
   syncJS (srEngine doc) $ do
           -- Set the fatal callback to continue, because we are testing things.
-          fatal <- function $ \ (_::JSObject,_::JSObject,_::JSObject,f::JSFunction () ()) ->
+          fatal <- function $ \ (a::JSObject,b::JSObject,c::JSObject,f::JSFunction () ()) ->
                         forkJS $ do
+                                -- This should be a command line thing
+--                                B.alert("FAILURE" <> cast a <> cast b <> cast c)
                                 -- wait a second before retrying
                                 SR.threadDelay 1000
                                 apply f ()
@@ -794,8 +851,46 @@ data MapOp k n
         | InsertMap k n
         | DeleteMap k
         | SizeMap                       Int                 -- number of elements
-        | ElemsMap                      [n]
+--        | ElemsMap                      [n]           -- tricky to test
   deriving Show
+
+genMapOps :: (Ord k, Arbitrary k, Arbitrary n) => Int -> Gen [MapOp k n]
+genMapOps sz1 = do
+   n <- choose (0,sz1)   -- how many operations?
+
+   let next i mp c = do
+              rest <- pick (i - 1) mp
+              return (c : rest)
+
+       modifiers i mp =
+         [ do k <- arbitrary
+              v <- arbitrary
+              let mp1 = Map.insert k v mp
+              next i mp1 (InsertMap k v)
+          ]
+
+       observers i mp =
+         [ do ok :: Bool <- arbitrary
+              k <- if (ok && not (Map.null mp))
+                         then elements (Map.keys mp)
+                         else arbitrary
+              next i mp (LookupMap k
+                            $ (\ v -> case v of
+                                       Just n -> Val n
+                                       _     -> Undefined)
+                            $ Map.lookup k mp)
+--         , do next i mp (ElemsMap (Map.elems mp))
+         , do next i mp (SizeMap (Map.size mp))
+         ]
+
+       pick 0 mp = return []
+       pick 1 mp = oneof (observers 1 mp)
+       pick i mp = oneof (observers i mp ++ modifiers i mp)
+
+   ops <- pick n (Map.empty)
+
+   return ops
+
 
 newtype SmallNat = SmallNat Int
    deriving (Eq, Ord)
@@ -810,10 +905,27 @@ instance Show SmallNat where
 instance Arbitrary SmallNat where
   arbitrary = sized $ \ n -> fmap (SmallNat . fromInteger) $ choose (0::Integer,max 0 (min (fromIntegral n) 100))
 
+newtype SmallString = SmallString String
+   deriving (Eq, Ord)
+
+instance SunroofValue SmallString where
+   type ValueOf SmallString = JSString
+   js (SmallString n) = js n
+
+instance Show SmallString where
+   show (SmallString n) = show n
+
+instance Arbitrary SmallString where
+  arbitrary = sized $ \ n -> do
+        str <- sequence [ elements "ABC$ "
+                        | _ <- [1.. min n 3]
+                        ]
+        return $ SmallString str
+
+
 ------------------------------------------------------
 
-
-test = quickCheck (forAll (genArrayOps (10,10) :: Gen (ArrayConstructor SmallNat,[ArrayOp SmallNat]))
+test = quickCheck (forAll (genMapOps 10 :: Gen [MapOp SmallString SmallNat])
                   $ \ c -> P.label (show c) True)
 
 
