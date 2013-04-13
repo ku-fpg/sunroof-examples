@@ -361,7 +361,7 @@ checkArbitraryArray doc = monadicIO $ do
                                  LookupArray n ok -> do
                                    v <- evaluate $ lookup' (js n) arr
                                    case ok of
-                                     Just (Val n) -> do
+                                     Val n -> do
                                           ifB (js n /=* v)
                                               (return false)
                                               (k $$ ())
@@ -733,9 +733,9 @@ data Val n = Val n | Undefined
         deriving (Eq, Ord, Show)
 
 data ArrayOp n
-        = LookupArray Int               (Maybe (Val n))  -- n is the expected result
+        = LookupArray Int               (Val n)        -- n is the expected result
         | InsertArray Int n
-        | LengthArray                   Int                 -- number of elements
+        | LengthArray                   Int            -- number of elements
         | ElemsArray                    [Val n]
   deriving Show
 
@@ -755,23 +755,33 @@ genArrayOps (sz1,sz2) = do
               rest <- pick (i - 1) mp
               return (c : rest)
 
-       pick 0 mp = return []
-       pick i mp = oneof
-         [ do ok :: Bool <- arbitrary
-              k <- if (ok && not (Map.null mp))
-                         then elements (Map.keys mp)
-                         else choose (-10,100)       -- This *might* hit; see test below
-              next i mp (LookupArray k (Map.lookup k mp))
-         , do k <- choose (-10,100)
+       modifiers i mp =
+         [ do k <- choose (-10,100)
               v <- arbitrary
               let mp1 = if k < 0 then mp
                                  else Map.insert k (Val v) mp `Map.union`
                                       Map.fromList [ (k,Undefined) | k <- [(Map.size mp)..(k-1)]]
 
               next i mp1 (InsertArray k v)
+          ]
+
+       observers i mp =
+         [ do ok :: Bool <- arbitrary
+              k <- if (ok && not (Map.null mp))
+                         then elements (Map.keys mp)
+                         else choose (-10,100)       -- This *might* hit; see test below
+              next i mp (LookupArray k
+                            $ (\ v -> case v of
+                                       Just n -> n
+                                       _     -> Undefined)
+                            $ Map.lookup k mp)
          , do next i mp (ElemsArray (Map.elems mp))
          , do next i mp (LengthArray (Map.size mp))
          ]
+
+       pick 0 mp = return []
+       pick 1 mp = oneof (observers 1 mp)
+       pick i mp = oneof (observers i mp ++ modifiers i mp)
 
    ops <- pick n (Map.fromList $ zip [0..] (case cons of
                                               NewEmptyArray -> []
@@ -779,12 +789,13 @@ genArrayOps (sz1,sz2) = do
 
    return (cons,ops)
 
-test = quickCheck (forAll (genArrayOps (10,10) :: Gen (ArrayConstructor SmallNat,[ArrayOp SmallNat]))
-                  $ \ c -> P.label (show c) True)
-
-
-prop :: ArrayConstructor Int -> Property
-prop c = P.label (show c) $ True
+data MapOp k n
+        = LookupMap k                   (Val n)  -- n is the expected result
+        | InsertMap k n
+        | DeleteMap k
+        | SizeMap                       Int                 -- number of elements
+        | ElemsMap                      [n]
+  deriving Show
 
 newtype SmallNat = SmallNat Int
    deriving (Eq, Ord)
@@ -797,14 +808,15 @@ instance Show SmallNat where
    show (SmallNat n) = show n
 
 instance Arbitrary SmallNat where
-  arbitrary = fmap (SmallNat . fromInteger) $ choose (0::Integer,10000)
+  arbitrary = sized $ \ n -> fmap (SmallNat . fromInteger) $ choose (0::Integer,max 0 (min (fromIntegral n) 100))
 
 ------------------------------------------------------
 
-data TestMap k a
-        = InsertMap k a
-        | LookupMap k
-        | SizeMap
-        | DeleteMap k
 
+test = quickCheck (forAll (genArrayOps (10,10) :: Gen (ArrayConstructor SmallNat,[ArrayOp SmallNat]))
+                  $ \ c -> P.label (show c) True)
+
+
+prop :: ArrayConstructor Int -> Property
+prop c = P.label (show c) $ True
 
