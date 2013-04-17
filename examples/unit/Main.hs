@@ -117,8 +117,12 @@ web_app doc = do
                 , Test 100 "Arbitrary Boolean"    (checkArbitraryBool  doc)
                 ])
           , ("Conditionals",
-                [ Test  10 "if/then/else -> Int (A)"   (checkArbitraryIfThenElse_Int doc tA)
-                , Test  10 "if/then/else -> Int (B)"   (checkArbitraryIfThenElse_Int doc tB)
+                [ Test  10 "if/then/else -> Int       (A)"   (checkArbitraryIfThenElse_Int doc tA)
+                , Test  10 "if/then/else -> Int       (B)"   (checkArbitraryIfThenElse_Int doc tB)
+                , Test  10 "if/then/else -> ()        (A)"   (checkArbitraryIfThenElse_Unit doc tA)
+                , Test  10 "if/then/else -> ()        (B)"   (checkArbitraryIfThenElse_Unit doc tB)
+                , Test  10 "if/then/else -> (Int,Int) (A)"   (checkArbitraryIfThenElse_Int_Int doc tA)
+                , Test  10 "if/then/else -> (Int,Int) (B)"   (checkArbitraryIfThenElse_Int_Int doc tB)
                 ])
           , ("Uplink & Downlink",
                 [ Test 100 "Constant String"   (checkDownlinkUplink' doc (==) :: String -> Property)
@@ -203,6 +207,7 @@ checkArbitraryBool doc seed = monadicIO $ do
   b' <- run $ syncJS (srEngine doc) (return e)
   assert $ b == b'
 
+-- TODO: add an effect to the if/then/else's
 checkArbitraryIfThenElse_Int :: forall t . (SunroofThread t) => TestEngine -> ThreadProxy t -> Int -> Property
 checkArbitraryIfThenElse_Int doc ThreadProxy seed = monadicIO $ do
   let n = (abs seed `mod` 8) + 1
@@ -217,6 +222,36 @@ checkArbitraryIfThenElse_Int doc ThreadProxy seed = monadicIO $ do
 --  run $ print ("e,e1,e2",e,e1,e2)
   r12' <- run $ syncJS (srEngine doc) (ifB e (return e1) (return e2) >>= return :: JS t JSNumber)
   assert $ (if b then r1 else r2) == r12'
+
+-- TODO: add an effect to the if/then/else's
+checkArbitraryIfThenElse_Int_Int :: forall t . (SunroofThread t) => TestEngine -> ThreadProxy t -> Int -> Property
+checkArbitraryIfThenElse_Int_Int doc ThreadProxy seed = monadicIO $ do
+  let n = (abs seed `mod` 8) + 1
+  (b, e) <- pick $ sameSeed (boolExprGen n :: Gen Bool)
+                            (boolExprGen n :: Gen JSBool)
+  (r1, e1) <- pick $ sameSeed (numExprGen n :: Gen Double)
+                              (numExprGen n :: Gen JSNumber)
+  (r2, e2) <- pick $ sameSeed (numExprGen n :: Gen Double)
+                              (numExprGen n :: Gen JSNumber)
+  pre $ abs r1 < (1000000 :: Double)
+  pre $ abs r2 < (1000000 :: Double)
+--  run $ print ("e,e1,e2",e,e1,e2)
+  -- TODO lift the restriction about returning tuples
+  r12' <- run $ syncJS (srEngine doc) (
+                do (x1,x2) <- ifB e (return (e1,e2)) (return (e2,e1))
+                   return (x1 * 100 + x2) :: JS t JSNumber)
+  assert $ (if b then (r1 * 100 + r2) else (r2 * 100 + r1)) == r12'
+
+
+
+checkArbitraryIfThenElse_Unit :: forall t . (SunroofThread t) => TestEngine -> ThreadProxy t -> Int -> Property
+checkArbitraryIfThenElse_Unit doc ThreadProxy seed = monadicIO $ do
+  let n = (abs seed `mod` 8) + 1
+  (b, e) <- pick $ sameSeed (boolExprGen n :: Gen Bool)
+                            (boolExprGen n :: Gen JSBool)
+--  run $ print ("e,e1,e2",e,e1,e2)
+  r12' <- run $ syncJS (srEngine doc) (ifB e (return ()) (return ()) >>= return :: JS t ())
+  assert $ () == r12'
 
 {-
 checkArbitraryArray_Int
