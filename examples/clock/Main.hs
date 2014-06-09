@@ -46,8 +46,8 @@ clockJS = function $ \() -> do
         (c # lineTo (0, -u * 0.8)) -- Minute line
         (c # lineTo (0, -u * 0.9)) -- Hour line
     ifB (n `mod` 15 ==* 0)
-        (c # setLineWidth 8) -- Quarter line
-        (c # setLineWidth 3) -- Non-Quarter line
+        (c # lineWidth := 8) -- Quarter line
+        (c # lineWidth := 3) -- Non-Quarter line
     c # stroke
     c # closePath
     -- Draw of the hour numbers
@@ -62,9 +62,9 @@ clockJS = function $ \() -> do
   -- Renders a single clock pointer.
   renderClockPointer <- function $ \(c :: JSCanvas, u :: JSNumber, angle :: JSNumber, width :: JSNumber, len :: JSNumber) -> do
     c # save
-    c # setLineCap "round"
+    c # lineCap := "round"
     c # rotate angle
-    c # setLineWidth width
+    c # lineWidth := width
     c # beginPath
     c # moveTo (0, u * 0.1)
     c # lineTo (0, -u * len)
@@ -75,7 +75,7 @@ clockJS = function $ \() -> do
   renderClockPointers <- function $ \(c :: JSCanvas, u :: JSNumber) -> do
     (h, m, s) <- currentTime
     c # save
-    c # setLineCap "round"
+    c # lineCap := "round"
     -- Hour pointer
     renderClockPointer $$
       (c, u, (2 * pi / 12) * ((h `mod` 12) + (m `mod` 60) / 60), 15, 0.4)
@@ -83,7 +83,7 @@ clockJS = function $ \() -> do
     renderClockPointer $$
       ( c, u, (2 * pi / 60) * ((m `mod` 60) + (s `mod` 60) / 60), 10, 0.7)
     -- Second pointer
-    c # setStrokeStyle "red"
+    c # strokeStyle := "red"
     renderClockPointer $$ ( c, u, (2 * pi / 60) * (s `mod` 60), 4, 0.9)
     -- Restore everything
     c # restore
@@ -108,12 +108,12 @@ clockJS = function $ \() -> do
     c <- context
     -- Basic setup
     c # save
-    c # setFillStyle "black"
-    c # setStrokeStyle "black"
-    c # setLineCap "round"
-    c # setTextAlign "center"
-    c # setFont ((cast $ u * 0.1) <> "px serif")
-    c # setTextBaseline "top"
+    c # fillStyle := "black"
+    c # strokeStyle := "black"
+    c # lineCap := "round"
+    c # textAlign := "center"
+    c # font := ((cast $ u * 0.1) <> "px serif")
+    c # textBaseline := "top"
     c # clearRect (0,0) (w,h)
     c # translate (w / 2, h / 2)
     -- Draw all hour lines.

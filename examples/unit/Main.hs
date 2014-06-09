@@ -167,6 +167,7 @@ web_app doc = do
 checkConstValue :: ( Eq a
                    , SunroofValue a
                    , SunroofResult (ValueOf a)
+                   , Sunroof (ValueOf a)
                    , a ~ ResultOf (ValueOf a)
                    ) => TestEngine -> a -> Property
 checkConstValue doc n = monadicIO $ do

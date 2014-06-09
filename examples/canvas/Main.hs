@@ -80,7 +80,7 @@ example_1_2_2 canvas c = do
   c # moveTo (100,150)
   c # lineTo (450,50)
   c # closePath
-  c # setLineWidth 15
+  c # lineWidth :=  15
   c # stroke
 
 example_1_2_3 :: JSObject -> JSCanvas -> JSA ()
@@ -89,8 +89,8 @@ example_1_2_3 canvas c = do
   c # moveTo (100,150)
   c # lineTo (450,50)
   c # closePath
-  c # setLineWidth 5
-  c # setStrokeStyle "#ff0000"
+  c # lineWidth := 5
+  c # strokeStyle := "#ff0000"
   c # stroke
 
 example_1_2_4 :: JSObject -> JSCanvas -> JSA ()
@@ -102,9 +102,9 @@ example_1_2_4 canvas c = do
          c # moveTo (200, h / 2 + n)
          c # lineTo (w - 200, h / 2 + n)
          c # closePath
-         c # setLineWidth 20
-         c # setStrokeStyle "#0000ff"
-         c # setLineCap cap
+         c # lineWidth := 20
+         c # strokeStyle := "#0000ff"
+         c # lineCap := cap
          c # stroke
     | (cap,n) <- zip ["butt","round","square"] [-50,0,50]
     ]
@@ -122,8 +122,8 @@ example_1_3_1 canvas c = do
   c # beginPath
   c # arc' (centerX, centerY) radius (startingAngle, endingAngle) counterclockwise
   c # closePath
-  c # setLineWidth 15
-  c # setStrokeStyle "black"
+  c # lineWidth := 15
+  c # strokeStyle := "black"
   c # stroke
 
 example_1_5_4 :: JSObject -> JSCanvas -> JSA ()
@@ -135,28 +135,28 @@ example_1_5_4 canvas c = do
   let radius = 70
   c # beginPath
   c # arc' (centerX, centerY) radius (0, 2 * pi) false
-  c # setFillStyle "#8ED6FF"
+  c # fillStyle := "#8ED6FF"
   c # fill
-  c # setLineWidth  5
-  c # setStrokeStyle "black"
+  c # lineWidth := 5
+  c # strokeStyle := "black"
   c # stroke
 
 example_1_8_1 :: JSObject -> JSCanvas -> JSA ()
 example_1_8_1 canvas c = do
-  c # setFont "40pt Calibri"
+  c # font := "40pt Calibri"
   c # fillText "Hello World!" (150, 100)
 
 example_1_8_2 :: JSObject -> JSCanvas -> JSA ()
 example_1_8_2 canvas c = do
-  c # setFont "40pt Calibri"
-  c # setFillStyle "#0000ff"
+  c # font := "40pt Calibri"
+  c # fillStyle := "#0000ff"
   c # fillText "Hello World!" (150, 100)
 
 example_1_8_3 :: JSObject -> JSCanvas -> JSA ()
 example_1_8_3 canvas c = do
-  c # setFont "60pt Calibri"
-  c # setLineWidth 3
-  c # setStrokeStyle "blue"
+  c # font := "60pt Calibri"
+  c # lineWidth := 3
+  c # strokeStyle := "blue"
   c # strokeText "Hello World!" (80, 110)
 
 example_1_8_4 :: JSObject -> JSCanvas -> JSA ()
@@ -166,21 +166,21 @@ example_1_8_4 canvas c = do
   let x = w / 2
   let y = h / 2
   -- Draw alignment line
-  c # setStrokeStyle "red"
+  c # strokeStyle := "red"
   c # beginPath
   c # moveTo (x, 0)
   c # lineTo (x, h)
   c # closePath
-  c # setLineWidth 1
+  c # lineWidth := 1
   c # stroke
   -- Draw text
-  c # setFont "30px Calibri"
-  c # setTextBaseline "top"
-  c # setFillStyle "blue"
+  c # font := "30px Calibri"
+  c # textBaseline := "top"
+  c # fillStyle := "blue"
   -- Function to draw baseline identifier on its baseline.
   let textFun :: JSString -> JSNumber -> JSA JSNumber
       textFun al offset = do
-        c # setTextAlign al
+        c # textAlign := al
         c # fillText al (x, offset)
         return $ offset + 30
   -- Line the different identifiers up after each other.
@@ -192,21 +192,21 @@ example_1_8_5 canvas c = do
   h <- evaluate $ canvas ! height
   let y = h / 2
   -- Draw baseline
-  c # setStrokeStyle "red"
+  c # strokeStyle := "red"
   c # beginPath
   c # moveTo (0, y)
   c # lineTo (w, y)
   c # closePath
-  c # setLineWidth 1
+  c # lineWidth := 1
   c # stroke
   -- Draw text
-  c # setFont "15pt Calibri"
-  c # setTextAlign "left"
-  c # setFillStyle "blue"
+  c # font := "15pt Calibri"
+  c # textAlign := "left"
+  c # fillStyle := "blue"
   -- Function to draw baseline identifier on its baseline.
   let textFun :: JSString -> JSNumber -> JSA JSNumber
       textFun bl offset = do
-        c # setTextBaseline bl
+        c # textBaseline := bl
         c # fillText bl (offset, y)
         tm <- c # measureText bl
         return $ offset + (tm ! width)
@@ -228,9 +228,9 @@ passFold_ e l = passFold e l >> return ()
 message :: JSObject -> JSCanvas -> JSString -> JSA ()
 message canvas c msg = do
   c # save
-  c # setFont "30pt Calibri"
-  c # setTextAlign "left"
-  c # setTextBaseline "alphabetic"
-  c # setFillStyle "#8090a0"
+  c # font := "30pt Calibri"
+  c # textAlign := "left"
+  c # textBaseline := "alphabetic"
+  c # fillStyle := "#8090a0"
   c # fillText msg (10, (canvas ! height) - 10)
   c # restore
