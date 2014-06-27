@@ -6,6 +6,7 @@ dist/*
 *.swo
 .DS_Store
 sunroof-example
+cabal-dev/
 Main
 .shake.database
 /examples/clock/main.js
