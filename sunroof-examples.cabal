@@ -1,5 +1,5 @@
 Name:                sunroof-examples
-Version:             0.2.1
+Version:             0.2.2
 Synopsis:            Tests for Sunroof
 Homepage:            https://github.com/ku-fpg/sunroof-examples
 Bug-reports:         https://github.com/ku-fpg/sunroof-examples
@@ -43,7 +43,7 @@ Executable sunroof-browser-info
     Build-Depends: 
          base                   >= 4.6,
          sunroof-compiler       == 0.2.1,
-         sunroof-server         == 0.2,
+         sunroof-server         == 0.2.1,
          Boolean                >= 0.2,
          semigroups             >= 0.9,
          data-default           >= 0.5
@@ -57,7 +57,7 @@ Executable sunroof-canvas
     Build-Depends: 
          base                   >= 4.6,
          sunroof-compiler       == 0.2.1,
-         sunroof-server         == 0.2,
+         sunroof-server         == 0.2.1,
          Boolean                >= 0.2,
          data-default           >= 0.5
                   
@@ -84,7 +84,7 @@ Executable sunroof-fib
     Build-Depends: 
          base                   >= 4.6,
          sunroof-compiler       == 0.2.1,
-         sunroof-server         == 0.2,
+         sunroof-server         == 0.2.1,
          Boolean                >= 0.2,
          semigroups             >= 0.9,
          data-default           >= 0.5
@@ -98,7 +98,7 @@ Executable sunroof-unit
     Other-Modules:       Paths_sunroof_examples
     Build-Depends: 
          sunroof-compiler       == 0.2.1,
-         sunroof-server         == 0.2,
+         sunroof-server         == 0.2.1,
          Boolean                >= 0.2,
          data-default           >= 0.5,
          semigroups             >= 0.9,
