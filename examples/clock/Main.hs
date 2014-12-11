@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, DataKinds, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings, DataKinds, ScopedTypeVariables #-}
 
 module Main where
 
@@ -28,10 +28,6 @@ main = do
   readFile (dataDir </> "examples/clock/index.html") >>= writeFile "clock.html"
   -- Compile the JavaScript and also write it to the current directory.
   sunroofCompileJSA def "main" clockJS >>= writeFile "main.js"
-
-default(JSNumber, JSString, String)
-
--- type instance BooleanOf () = JSBool
 
 clockJS :: JS A (JSFunction () ())
 clockJS = function $ \() -> do
