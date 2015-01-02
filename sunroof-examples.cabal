@@ -44,7 +44,6 @@ Executable sunroof-browser-info
          base                   >= 4.6,
          sunroof-compiler       == 0.2.2,
          sunroof-server         == 0.2.2,
-         Boolean                >= 0.2,
          semigroups             >= 0.9,
          data-default           >= 0.5
                   
@@ -105,9 +104,7 @@ Executable sunroof-unit
          base                   >= 4.3.1 && < 5,
          parallel-io            >= 0.3.3,
          QuickCheck             >= 2.6,
-         containers             >= 0.5,
-         stm                    >= 2.4.2,
-         random                 >= 1.0.1.1
+         containers             >= 0.5
          
     Main-is: Main.hs
     Hs-Source-Dirs: examples/unit
@@ -117,7 +114,6 @@ Executable sunroof-unit
 Executable sunroof-inplace-shaker
     Build-Depends: 
         base                   >= 4.6,
-        process                >= 1.1,
         directory              >= 1.2,
         shake                  >= 0.10
 
