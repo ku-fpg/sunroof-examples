@@ -5,7 +5,6 @@ import Development.Shake as Shake
 import System.Directory
 import System.Environment
 import Development.Shake.FilePath
-import Control.Monad
 import Data.Char
 import Data.List
 
