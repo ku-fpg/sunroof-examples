@@ -1,11 +1,17 @@
+{-# LANGUAGE CPP #-}
+module Main (main) where
+
 import Development.Shake as Shake
 import System.Directory
-import System.Process
 import System.Environment
 import Development.Shake.FilePath
 import Control.Monad
 import Data.Char
 import Data.List
+
+#if MIN_VERSION_base(4,8,0)
+import Prelude hiding ((*>))
+#endif
 
 -- local repos to use; later look at the srcs to figure out what the external repo does
 repos :: [String]
@@ -16,14 +22,14 @@ repos = [ "../sunroof-compiler"  -- the sunroof compiler
 findExecs :: [String] -> [(String,Exec)]
 findExecs (xs:xss) = case words xs of
         ["Executable",nm] ->
-                let loop (xs:xss) o
-                        | all isSpace xs = loop xss o
-                        | isSpace (head xs) = case words xs of
+                let loop (xs':xss') o
+                        | all isSpace xs'    = loop xss' o
+                        | isSpace (head xs') = case words xs' of
                                                 ("Main-is:":ns) -> loop xss (o { the_main = unwords ns })
-                                                ("Hs-Source-Dirs:":ns) -> loop xss (o { the_dir = unwords ns })
-                                                ("Ghc-Options:":ns) -> loop xss (o { the_opts = unwords ns })
-                                                _ -> loop xss o
-                        | otherwise = (nm,o) : findExecs (xs:xss)
+                                                ("Hs-Source-Dirs:":ns) -> loop xss' (o { the_dir = unwords ns })
+                                                ("Ghc-Options:":ns) -> loop xss' (o { the_opts = unwords ns })
+                                                _ -> loop xss' o
+                        | otherwise = (nm,o) : findExecs (xs':xss')
                     loop [] o = (nm,o) : []
                 in loop xss (Exec "" "" "")
         _ -> findExecs xss
@@ -36,12 +42,13 @@ data Exec = Exec
         }
         deriving Show
 
-
+main :: IO ()
 main = do
         args <- getArgs
         execs <- readFile "sunroof-examples.cabal" >>= return . findExecs . lines
         main2 args execs
 
+main2 :: [String] -> [(String, Exec)] -> IO ()
 main2 [] execs = do
         putStrLn "usage: Shake [all] exec_1 exec_2 ..."
         putStrLn ""
@@ -60,7 +67,7 @@ main2 xs execs = shake (shakeOptions) $ do
         let autogen = "inplace-autogen/Paths_sunroof_examples.hs"
         let targets =
              [ "dist" </> "build" </> nm </> nm
-             | (nm,ex) <- execs
+             | (nm,_ex) <- execs
              , xs == ["all" ]|| nm `elem` xs
              ]
         want [autogen]
@@ -88,9 +95,9 @@ main2 xs execs = shake (shakeOptions) $ do
                    [ do files <- getDirectoryFiles repo ["*.cabal"]
                         liftIO $ print files
                         need $ map (repo </>) files
-                        files <- getDirectoryFiles repo ["//*.hs"]
-                        liftIO $ print files
-                        need $ map (repo </>) files
+                        files' <- getDirectoryFiles repo ["//*.hs"]
+                        liftIO $ print files'
+                        need $ map (repo </>) files'
                    | repo <- repos
                    ]
 

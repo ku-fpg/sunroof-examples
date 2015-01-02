@@ -1,18 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Main where
+module Main (main) where
 
 import Data.Default ( Default(..) )
 import Data.Semigroup ( (<>) )
-import Data.Boolean
-import Data.Maybe ( fromJust )
-import Data.String ( IsString(..) )
-
-import Control.Monad ( liftM2 )
 
 import Language.Sunroof
 import Language.Sunroof.Server
-import Language.Sunroof.JS.Canvas
 import Language.Sunroof.JS.Browser
 import Language.Sunroof.JS.JQuery
 import Paths_sunroof_examples
@@ -27,6 +21,7 @@ main = do
                       , cometIndexFile = "examples/browser-info/index.html"
                       }) main2
 
+main2 :: SunroofEngine -> IO ()
 main2 doc = do
   theCookie <- syncJS doc $ evaluate $ document ! cookie
   putStrLn $ "Cookie:     " ++ show theCookie

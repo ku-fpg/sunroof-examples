@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Main where
+module Main (main) where
 
 import Data.Default
 import Data.Boolean
@@ -23,6 +23,7 @@ main = do
                       , cometIndexFile = "examples/canvas/index.html"
                       }) main2
 
+main2 :: SunroofEngine -> IO ()
 main2 doc = do
 
   ch <- rsyncJS doc $ newChan
@@ -67,7 +68,7 @@ examples =
   ]
 
 example_1_2_1 :: JSObject -> JSCanvas -> JSA ()
-example_1_2_1 canvas c = do
+example_1_2_1 _ c = do
   c # beginPath
   c # moveTo (100,150)
   c # lineTo (450,50)
@@ -75,7 +76,7 @@ example_1_2_1 canvas c = do
   c # stroke
 
 example_1_2_2 :: JSObject -> JSCanvas -> JSA ()
-example_1_2_2 canvas c = do
+example_1_2_2 _ c = do
   c # beginPath
   c # moveTo (100,150)
   c # lineTo (450,50)
@@ -84,7 +85,7 @@ example_1_2_2 canvas c = do
   c # stroke
 
 example_1_2_3 :: JSObject -> JSCanvas -> JSA ()
-example_1_2_3 canvas c = do
+example_1_2_3 _ c = do
   c # beginPath
   c # moveTo (100,150)
   c # lineTo (450,50)
@@ -142,18 +143,18 @@ example_1_5_4 canvas c = do
   c # stroke
 
 example_1_8_1 :: JSObject -> JSCanvas -> JSA ()
-example_1_8_1 canvas c = do
+example_1_8_1 _ c = do
   c # font := "40pt Calibri"
   c # fillText "Hello World!" (150, 100)
 
 example_1_8_2 :: JSObject -> JSCanvas -> JSA ()
-example_1_8_2 canvas c = do
+example_1_8_2 _ c = do
   c # font := "40pt Calibri"
   c # fillStyle := "#0000ff"
   c # fillText "Hello World!" (150, 100)
 
 example_1_8_3 :: JSObject -> JSCanvas -> JSA ()
-example_1_8_3 canvas c = do
+example_1_8_3 _ c = do
   c # font := "60pt Calibri"
   c # lineWidth := 3
   c # strokeStyle := "blue"
@@ -164,7 +165,6 @@ example_1_8_4 canvas c = do
   w <- evaluate $ canvas ! width
   h <- evaluate $ canvas ! height
   let x = w / 2
-  let y = h / 2
   -- Draw alignment line
   c # strokeStyle := "red"
   c # beginPath

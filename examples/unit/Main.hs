@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -7,23 +8,26 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ImpredicativeTypes #-}
 
-module Main where
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-import Prelude hiding (mod, div)
+module Main (main) where
+
+import Prelude hiding
+    ( mod
+    , div
+#if MIN_VERSION_base(4,8,0)
+    , (<*)
+#endif
+    )
 
 import Data.Semigroup
 import Data.Boolean
 import Data.Boolean.Numbers hiding (floor, round)
 import Data.Default
-import Data.List
-import Data.Char ( isControl, isAscii )
 import Data.Maybe ( isJust )
-import Data.Boolean
 import qualified Data.Map as Map
 
 import qualified Numeric
-
-import Control.Concurrent as CC
 
 import Language.Sunroof as SR
 import Language.Sunroof.Server
@@ -31,25 +35,14 @@ import Language.Sunroof.JS.JQuery (jQuery)
 import qualified Language.Sunroof.JS.JQuery as JQuery
 import qualified Language.Sunroof.JS.Browser as B
 
-import Language.Sunroof.JS.Number
-import Language.Sunroof.JS.String
-import Language.Sunroof.JS.Bool
-import Language.Sunroof.JS.Object
 import Language.Sunroof.JS.Array as A
-import Language.Sunroof.Classes
 import qualified Language.Sunroof.JS.Map as M
 
-import System.Random
 import System.IO
-import System.Timeout
-import Control.Concurrent.STM
 import Control.Monad (when, liftM2)
 
-import Data.Ratio
-
-import Test.QuickCheck hiding ( assert )
+import Test.QuickCheck
 import Test.QuickCheck.Monadic ( run, monadicIO, assert, pick, pre )
-import qualified Test.QuickCheck.Monadic as M
 import Test.QuickCheck.Gen ( Gen(MkGen, unGen) )
 import Test.QuickCheck.Property hiding (Result,reason)
 import qualified Test.QuickCheck.Property as P
@@ -98,8 +91,8 @@ data TestStyle = TestWithTiming         -- single core, do timing
 web_app :: TestEngine -> IO ()
 web_app doc = do
 
-        let tA = ThreadProxy :: ThreadProxy A
-        let tB = ThreadProxy :: ThreadProxy B
+        let tA = ThreadProxy :: ThreadProxy 'A
+        let tB = ThreadProxy :: ThreadProxy 'B
 
         runTests doc $ take 100 $ drop 0 $
           [ ("Constants",
@@ -147,7 +140,7 @@ web_app doc = do
                                                                               ; return v })
                 , Test  1  "MVar (Full + take)"       (checkMVars doc 1 SR.putMVar $
                                                                            do { v <- SR.newMVar (-1)
-                                                                              ; v # SR.takeMVar
+                                                                              ; _ <- v # SR.takeMVar
                                                                               ; return v })
                 ])
           , ("Regression",
@@ -248,8 +241,8 @@ checkArbitraryIfThenElse_Int_Int doc ThreadProxy seed = monadicIO $ do
 checkArbitraryIfThenElse_Unit :: forall t . (SunroofThread t) => TestEngine -> ThreadProxy t -> Int -> Property
 checkArbitraryIfThenElse_Unit doc ThreadProxy seed = monadicIO $ do
   let n = (abs seed `mod` 8) + 1
-  (b, e) <- pick $ sameSeed (boolExprGen n :: Gen Bool)
-                            (boolExprGen n :: Gen JSBool)
+  (_b, e) <- pick $ sameSeed (boolExprGen n :: Gen Bool)
+                             (boolExprGen n :: Gen JSBool)
 --  run $ print ("e,e1,e2",e,e1,e2)
   r12' <- run $ syncJS (srEngine doc) (ifB e (return ()) (return ()) >>= return :: JS t ())
   assert $ () == r12'
@@ -272,7 +265,7 @@ checkDownlinkUplink' :: forall a .
                           -> (a -> a -> Bool)
                           -> a
                           -> Property
-checkDownlinkUplink' doc equals value = monadicIO $ do
+checkDownlinkUplink' doc equals _value = monadicIO $ do
   (down :: Downlink (ValueOf a)) <- run $ newDownlink (srEngine doc)
   (up :: Uplink (ValueOf a)) <- run $ newUplink (srEngine doc)
   return $ checkDownlinkUplink doc equals down up
@@ -288,44 +281,44 @@ checkDownlinkUplink :: ( SunroofValue a
                          -> Uplink (ValueOf a)
                          -> a
                          -> Property
-checkDownlinkUplink doc equals down up value = monadicIO $ do
-  run $ putDownlink down (return $ js value)
+checkDownlinkUplink doc equals down up value' = monadicIO $ do
+  run $ putDownlink down (return $ js value')
   run $ asyncJS (srEngine doc) $ do
     v <- getDownlink down
     up # putUplink v
-  value' <- run $ getUplink up
-  assert $ value `equals` value'
+  value'' <- run $ getUplink up
+  assert $ value' `equals` value''
 
 checkArbitraryChan_Int
         :: TestEngine
         -> Bool -- write before any read
-        -> (JS B (m JSNumber))
-        -> (JSNumber -> m JSNumber -> JS B ())
+        -> (JS 'B (m JSNumber))
+        -> (JSNumber -> m JSNumber -> JS 'B ())
         -> (m JSNumber -> JS 'B JSNumber)
         -> Int
         -> Property
-checkArbitraryChan_Int doc wbr newChan writeChan readChan seed = monadicIO $ do
-  let n = (abs seed `mod` 8) + 1
+checkArbitraryChan_Int doc wbr newChan' writeChan' readChan' _seed = monadicIO $ do
+--   let n = (abs seed `mod` 8) + 1
   qPush <- pick $ frequency [(1,return False),(3,return True)]
   qPull <- pick $ frequency [(1,return False),(3,return True)]
   arr1 :: [Int] <- fmap (fmap (`Prelude.rem` 100)) $ pick $ vector 10
   arr2 :: [Int] <- fmap (fmap (`Prelude.rem` 100)) $ pick $ vector 10
   dat  :: [Int] <- fmap (fmap (`Prelude.rem` 100)) $ pick $ vector 10
 
-  let prog :: JS B (JSArray JSNumber)
+  let prog :: JS 'B (JSArray JSNumber)
       prog = do
           note :: JSArray JSBool <- newArray ()
-          ch <- newChan
+          ch <- newChan'
           (if wbr then id else forkJS) $
                    sequence_ [ do ifB (js (x >= 0 && qPush)) (SR.threadDelay (js x)) (return ())
-                                  note # A.push true
-                                  ch # writeChan (js y :: JSNumber)
+                                  _ <- note # A.push true
+                                  ch # writeChan' (js y :: JSNumber)
                              | (x,y) <- arr1 `zip` dat
                              ]
           arr :: JSArray JSNumber <- newArray ()
           sequence_ [ do ifB (js (x >= 0 && qPull)) (SR.threadDelay (js x)) (return ())
-                         note # A.push false
-                         z <- ch # readChan
+                         _ <- note # A.push false
+                         z <- ch # readChan'
                          arr # A.push z
                     | x <- arr2
                     ]
@@ -347,8 +340,8 @@ checkArbitraryChan_Int doc wbr newChan writeChan readChan seed = monadicIO $ do
 checkMVars
         :: TestEngine
         -> Int
-        -> (JSNumber -> m JSNumber -> JS B ())
-        -> (JS B (m JSNumber))
+        -> (JSNumber -> m JSNumber -> JS 'B ())
+        -> (JS 'B (m JSNumber))
         -> Int
         -> Property
 checkMVars doc sz write start _seed = monadicIO $ do
@@ -392,15 +385,15 @@ checkArbitraryArray doc = monadicIO $ do
         arr <- case cons of
                  NewEmptyArray -> empty
                  NewArray xs   -> array (fmap (\ (SmallNat n) -> n) xs)
-        let km = foldr (\ (op :: ArrayOp SmallNat) (km :: JSA (JSFunction () JSBool)) -> do
+        let km = foldr (\ (op :: ArrayOp SmallNat) (km' :: JSA (JSFunction () JSBool)) -> do
                            function $ \ () -> do
-                               k <- km
+                               k <- km'
                                case op of
-                                 LookupArray n ok -> do
+                                 LookupArray n ok' -> do
                                    v <- evaluate $ lookup' (js n) arr
-                                   case ok of
-                                     Val n -> do
-                                          ifB (js n /=* v)
+                                   case ok' of
+                                     Val n' -> do
+                                          ifB (js n' /=* v)
                                               (return false)
                                               (k $$ ())
                                      _ -> ifB (cast v /=* object "undefined")
@@ -454,15 +447,15 @@ checkArbitraryMap doc = monadicIO $ do
 
   res :: Bool <- run $ syncJS (srEngine doc) $ do
         mp <- M.newMap
-        let km = foldr (\ (op :: MapOp SmallString SmallNat) (km :: JSA (JSFunction () JSBool)) -> do
+        let km = foldr (\ (op :: MapOp SmallString SmallNat) (km' :: JSA (JSFunction () JSBool)) -> do
                            function $ \ () -> do
-                               k <- km
+                               k <- km'
                                case op of
-                                 LookupMap key ok -> do
+                                 LookupMap key ok' -> do
                                    v <- M.lookup (js key) mp
-                                   case ok of
-                                     Val n -> do
-                                          ifB (js n /=* v)
+                                   case ok' of
+                                     Val n' -> do
+                                          ifB (js n' /=* v)
                                               (return false)
                                               (k $$ ())
                                      _ -> ifB (cast v /=* object "undefined")
@@ -502,14 +495,14 @@ checkArbitraryMap doc = monadicIO $ do
 runFib :: TestEngine -> Int -> Property
 runFib doc n = monadicIO $ do
   r' <- run $ syncJS (srEngine doc) $ do
-        fib <- fixJS $ \ fib -> function $ \ (n :: JSNumber) -> do
-                ifB (n <* 2)
+        fib <- fixJS $ \ fib -> function $ \ (n' :: JSNumber) -> do
+                ifB (n' <* 2)
                     (return (1 :: JSNumber))
-                    (liftM2 (+) (apply fib (n - 1)) (apply fib (n - 2)))
+                    (liftM2 (+) (apply fib (n' - 1)) (apply fib (n' - 2)))
         apply fib (js n)
   let fib :: Int -> Int
-      fib n = xs !! n
-      xs = map (\ n -> if n < 2 then 1 else fib (n-1) + fib (n-2)) [0..]
+      fib n' = xs !! n'
+      xs = map (\ n' -> if n' < 2 then 1 else fib (n'-1) + fib (n'-2)) [0..]
   let r = fromIntegral (fib n)
   assert $ r `deltaEqual` r'
 
@@ -522,7 +515,7 @@ runFib doc n = monadicIO $ do
 regressionAssignmentIssue29 :: TestEngine -> Property
 regressionAssignmentIssue29 doc = monadicIO $ do
   () <- run $ syncJS (srEngine doc) $ do
-    v :: JSRef (JSContinuation ()) <- newJSRef (cast nullJS)
+    _v :: JSRef (JSContinuation ()) <- newJSRef (cast nullJS)
     -- Cause of Issue 29:
     -- Produces: function() { return (v86873["val"])(); } = null;
     -- Instead of: v86873["val"] = null;
@@ -540,7 +533,7 @@ runTests :: TestEngine -> [(String,[Test])] -> IO ()
 runTests doc all_tests = do
   syncJS (srEngine doc) $ do
           -- Set the fatal callback to continue, because we are testing things.
-          fatal <- function $ \ (a::JSObject,b::JSObject,c::JSObject,f::JSFunction () ()) ->
+          fatal <- function $ \ (_a::JSObject,_b::JSObject,_c::JSObject,f::JSFunction () ()) ->
                         forkJS $ do
                                 -- This should be a command line thing
 --                                B.alert("FAILURE" <> cast a <> cast b <> cast c)
@@ -559,7 +552,7 @@ runTests doc all_tests = do
 
   sequence_ [ do section txt $ concat
                               [ "<tr class=\"" ++ pbName i j ++ "\">" ++
-                                "<td class=\"count\">" ++ {-show n-} show 0 ++ "</td>" ++
+                                "<td class=\"count\">" ++ {-show n-} show (0::Int) ++ "</td>" ++
                                 "<td class=\"progress\"><div class=\"progressbar\"> </div></td><th>"
                                         ++ msg ++ "</th>" ++
                                                 "<td class=\"data data1\"></td>" ++
@@ -567,7 +560,7 @@ runTests doc all_tests = do
                                                 "<td class=\"data data3\"></td>" ++
                                                 "<td class=\"space\">&nbsp;</td>" ++
                                                 "</tr>"
-                              | (j::Int,Test n msg _) <- [1..] `zip` tests
+                              | (j::Int,Test _n msg _) <- [1..] `zip` tests
                               ]
            | (i::Int,(txt,tests)) <- [1..] `zip` all_tests
            ]
@@ -605,7 +598,7 @@ runTests doc all_tests = do
     return ()
 
 
-  result <- (case teStyle doc of
+  result' <- (case teStyle doc of
                 TestInPar n -> \ xs -> withPool n $ \ pool -> parallelInterleaved pool xs
                 _ -> sequence) $ concat [
       [ do let runTest :: Test -> IO (Result,Timings Double)
@@ -617,23 +610,23 @@ runTests doc all_tests = do
                    $ (if teShrink doc then id else noShrinking)
                    $ callback (afterTestCallback count)
                    $ test
-                 t <- getTimings (srEngine doc)
-                 print "DONE TESTS IN SR"
-                 return (r,fmap realToFrac t)
+                 t' <- getTimings (srEngine doc)
+                 putStrLn "DONE TESTS IN SR"
+                 return (r,fmap realToFrac t')
                execTest :: Test -> IO (Maybe (Timings Double))
-               execTest t@(Test _ name _) = do
+               execTest t'@(Test _ name _) = do
 --                 progressMsg doc name
-                 result <- E.try (runTest t >>= E.evaluate)
-                 case result of
+                 result'' <- E.try (runTest t' >>= E.evaluate)
+                 case result'' of
                    Left (e ::  E.SomeException) -> do
-                     print ("EXCEPTION:",e)
+                     print ("EXCEPTION:"::String,e)
                      overwriteMessage doc i j ("Exception!") "failure"
                      E.throw e
-                   Right (Success _ _ out,t) -> do
+                   Right (Success _ _ out,t'') -> do
                      putStrLn out
                      overwriteMessage doc i j ("Passed") "success"
-                     writeTimings doc i j t
-                     return $ Just t
+                     writeTimings doc i j t''
+                     return $ Just t''
                    Right (GaveUp _ _ out,_) -> do
                      putStrLn out
                      overwriteMessage doc i j ("Gave up") "failure"
@@ -650,8 +643,8 @@ runTests doc all_tests = do
                      overwriteMessage doc i j ("Ho expected failure") "failure"
                      return Nothing
                afterTestCallback :: Int -> Callback
-               afterTestCallback count = PostTest NotCounterexample $ \ state result -> do
-                 if not (P.abort result) && isJust (ok result)
+               afterTestCallback count = PostTest NotCounterexample $ \ state result'' -> do
+                 if not (P.abort result'') && isJust (ok result'')
                    then do
                      progressVal doc i j (numSuccessTests state + 1) (((numSuccessTests state + 1) * 100) `div` count)
                      if numSuccessTests state `mod` (casesPerTest `div` 10) == 0
@@ -663,21 +656,21 @@ runTests doc all_tests = do
                      return ()
            execTest t
 
-      | (j::Int,t@(Test _ msg _)) <- [1..] `zip` tests
+      | (j::Int,t@(Test _ _ _)) <- [1..] `zip` tests
       ]
-    | (i::Int,(txt,tests)) <- [1..] `zip` all_tests
+    | (i::Int,(_txt,tests)) <- [1..] `zip` all_tests
     ]
 
   asyncJS (srEngine doc) $ do
     p <- pbObject 0 0 $ \ n -> "." ++ n ++ " td.progress"
-    p # JQuery.setHtml $ js $ "<b align=\"center\">" ++
-                    show (length result) ++ " test(s), "++
-                    show (length [ () | Just _ <- result ]) ++ " passed / " ++
-                    show (length [ () | Nothing <- result ]) ++ " failed " ++
+    _ <- p # JQuery.setHtml $ js $ "<b align=\"center\">" ++
+                    show (length result') ++ " test(s), "++
+                    show (length [ () | Just _ <- result' ]) ++ " passed / " ++
+                    show (length [ () | Nothing <- result' ]) ++ " failed " ++
                     "</b>"
     return ()
 
-  let ts :: [Timings [Double]] = [ fmap (:[]) t | Just t <- result ]
+  let ts :: [Timings [Double]] = [ fmap (:[]) t | Just t <- result' ]
   case teStyle doc of
     TestWithTiming | length ts /= 0 -> do
             writeTimings doc 0 0
@@ -698,32 +691,34 @@ pbObject i j f = jQuery $ js $ f $ pbName i j
 
 progressVal :: TestEngine -> Int -> Int -> Int -> Int -> IO ()
 progressVal doc i j n np = asyncJS (srEngine doc) $ do
-  p <- pbObject i j $ \ n -> "." ++ n ++ " .progressbar"
+  p  <- pbObject i j $ \ n' -> "." ++ n' ++ " .progressbar"
   () <- p # invoke "progressbar" ( "option" :: JSString
                            , "value" :: JSString
                            , js np :: JSNumber)
-  p <- pbObject i j $ \ n -> "." ++ n ++ " .count"
-  p # JQuery.setHtml (cast ("" <> cast (js n) :: JSString))
+  p' <- pbObject i j $ \ n' -> "." ++ n' ++ " .count"
+  _  <- p' # JQuery.setHtml (cast ("" <> cast (js n) :: JSString))
   return ()
 
 overwriteMessage :: TestEngine -> Int -> Int -> String -> String -> IO ()
 overwriteMessage doc i j msg cls = asyncJS (srEngine doc) $ do
   p <- pbObject i j $ \ n -> "." ++ n ++ " td.progress"
-  p # JQuery.setHtml(js msg)
+  _ <- p # JQuery.setHtml(js msg)
   p # JQuery.addClass(js cls)
   return ()
 
 writeTimings :: TestEngine -> Int -> Int -> Timings Double -> IO ()
-writeTimings doc i j t | teStyle doc /= TestWithTiming = return ()
+writeTimings doc _ _ _ | teStyle doc /= TestWithTiming = return ()
 writeTimings doc i j t = asyncJS (srEngine doc) $ do
         pnt 1 (compileTime t)
         pnt 2 (sendTime t)
         pnt 3 (waitTime t)
         return ()
   where
+        pnt :: Int -> Double -> JS t ()
         pnt n v = do
                 p <- pbObject i j $ \ nd -> "." ++ nd ++ " td.data" ++ show n
-                p # JQuery.setHtml (js $ Numeric.showFFloat (Just 2) v "s")
+                _ <- p # JQuery.setHtml (js $ Numeric.showFFloat (Just 2) v "s")
+                return ()
 
 -- -----------------------------------------------------------------------
 -- Test Utilities
@@ -845,7 +840,7 @@ genArrayOps (sz1,sz2) = do
    n <- choose (0,sz2)   -- how many operations?
 
    let next i mp c = do
-              rest <- pick (i - 1) mp
+              rest <- pick' (i - 1) mp
               return (c : rest)
 
        modifiers i mp =
@@ -853,32 +848,32 @@ genArrayOps (sz1,sz2) = do
               v <- arbitrary
               let mp1 = if k < 0 then mp
                                  else Map.insert k (Val v) mp `Map.union`
-                                      Map.fromList [ (k,Undefined) | k <- [(Map.size mp)..(k-1)]]
+                                      Map.fromList [ (k',Undefined) | k' <- [(Map.size mp)..(k-1)]]
 
               next i mp1 (InsertArray k v)
           ]
 
        observers i mp =
-         [ do ok :: Bool <- arbitrary
-              k <- if (ok && not (Map.null mp))
+         [ do ok' :: Bool <- arbitrary
+              k <- if (ok' && not (Map.null mp))
                          then elements (Map.keys mp)
                          else choose (-10,100)       -- This *might* hit; see test below
               next i mp (LookupArray k
                             $ (\ v -> case v of
-                                       Just n -> n
-                                       _     -> Undefined)
+                                       Just n' -> n'
+                                       _       -> Undefined)
                             $ Map.lookup k mp)
          , do next i mp (ElemsArray (Map.elems mp))
          , do next i mp (LengthArray (Map.size mp))
          ]
 
-       pick 0 mp = return []
-       pick 1 mp = oneof (observers 1 mp)
-       pick i mp = oneof (observers i mp ++ modifiers i mp)
+       pick' 0 _  = return []
+       pick' 1 mp = oneof (observers 1 mp)
+       pick' i mp = oneof (observers i mp ++ modifiers i mp)
 
-   ops <- pick n (Map.fromList $ zip [0..] (case cons of
-                                              NewEmptyArray -> []
-                                              NewArray xs -> map Val xs))
+   ops <- pick' n (Map.fromList $ zip [0..] (case cons of
+                                               NewEmptyArray -> []
+                                               NewArray xs -> map Val xs))
 
    return (cons,ops)
 
@@ -895,7 +890,7 @@ genMapOps sz1 = do
    n <- choose (0,sz1)   -- how many operations?
 
    let next i mp c = do
-              rest <- pick (i - 1) mp
+              rest <- pick' (i - 1) mp
               return (c : rest)
 
        modifiers i mp =
@@ -906,24 +901,24 @@ genMapOps sz1 = do
           ]
 
        observers i mp =
-         [ do ok :: Bool <- arbitrary
-              k <- if (ok && not (Map.null mp))
-                         then elements (Map.keys mp)
-                         else arbitrary
+         [ do ok' :: Bool <- arbitrary
+              k <- if (ok' && not (Map.null mp))
+                          then elements (Map.keys mp)
+                          else arbitrary
               next i mp (LookupMap k
                             $ (\ v -> case v of
-                                       Just n -> Val n
-                                       _     -> Undefined)
+                                       Just n' -> Val n'
+                                       _       -> Undefined)
                             $ Map.lookup k mp)
 --         , do next i mp (ElemsMap (Map.elems mp))
          , do next i mp (SizeMap (Map.size mp))
          ]
 
-       pick 0 mp = return []
-       pick 1 mp = oneof (observers 1 mp)
-       pick i mp = oneof (observers i mp ++ modifiers i mp)
+       pick' 0 _  = return []
+       pick' 1 mp = oneof (observers 1 mp)
+       pick' i mp = oneof (observers i mp ++ modifiers i mp)
 
-   ops <- pick n (Map.empty)
+   ops <- pick' n (Map.empty)
 
    return ops
 
@@ -961,10 +956,10 @@ instance Arbitrary SmallString where
 
 ------------------------------------------------------
 
-test = quickCheck (forAll (genMapOps 10 :: Gen [MapOp SmallString SmallNat])
-                  $ \ c -> P.label (show c) True)
+-- test = quickCheck (forAll (genMapOps 10 :: Gen [MapOp SmallString SmallNat])
+--                   $ \ c -> P.label (show c) True)
 
 
-prop :: ArrayConstructor Int -> Property
-prop c = P.label (show c) $ True
+-- prop :: ArrayConstructor Int -> Property
+-- prop c = P.label (show c) $ True
 

@@ -1,18 +1,23 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE CPP, OverloadedStrings, ScopedTypeVariables #-}
+#if MIN_VERSION_base(4,8,0)
+{-# LANGUAGE TypeFamilies #-}
+#endif
 
-module Main where
+module Main (main) where
 
 import Data.Default ( Default(..) )
 import Data.Semigroup ( (<>) )
-import Control.Monad ( liftM2 )
+import Control.Monad ( liftM2, void )
 import Data.Boolean
 
 import Language.Sunroof
 import Language.Sunroof.Server
-import Language.Sunroof.JS.Canvas
-import Language.Sunroof.JS.Browser ( alert )
 import Language.Sunroof.JS.JQuery
 import Paths_sunroof_examples
+
+#if MIN_VERSION_base(4,8,0)
+import Prelude hiding ((<*))
+#endif
 
 main :: IO ()
 main = do
@@ -33,7 +38,7 @@ prog = do
                 o <- new "Object" ()
                 o # "id" := the_id
                 ch # writeChan o)
-      jq "body" >>= on "slide" ".slide" (\ (a :: JSObject, aux :: JSObject) -> do
+      jq "body" >>= on "slide" ".slide" (\ (_a :: JSObject, aux :: JSObject) -> do
                 the_id :: JSString <- jq (cast $ this) >>= invoke "attr" ("id" :: JSString)
                 o <- new "Object" ()
                 o # "id" := the_id
@@ -53,8 +58,8 @@ prog = do
                   (obj # attr nm := val)
                   (return ())
 
-          switchB _   []         def = def
-          switchB tag ((a,b):xs) def = ifB (tag ==* a) b (switchB tag xs def)
+          switchB _   []         def' = def'
+          switchB tag ((a,b):xs) def' = ifB (tag ==* a) b (switchB tag xs def')
 
       fib <- fixJS $ \ fib -> function $ \ (n :: JSNumber) -> do
           ifB (n <* 2)
@@ -73,13 +78,12 @@ prog = do
                   , ("reset" , update "model" 0               0 25)
                   ] $ return ()
 
-          model <- evaluate (obj ! "model") :: JSB JSNumber
-          jQuery "#slider"  >>= slider (cast model)
+          model' <- evaluate (obj ! "model") :: JSB JSNumber
+          void $ jQuery "#slider"  >>= slider (cast model')
           liftJS $ do
-                jQuery "#fib-out" >>= setHtml ("fib " <> cast model <> "...")
-                res <- apply fib model
-                jQuery "#fib-out" >>= setHtml ("fib " <> cast model <> " = " <> cast res)
-                return ()
+                void $ jQuery "#fib-out" >>= setHtml ("fib " <> cast model' <> "...")
+                res' <- apply fib model'
+                void $ jQuery "#fib-out" >>= setHtml ("fib " <> cast model' <> " = " <> cast res')
 
       return ()
 

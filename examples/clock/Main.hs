@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DataKinds, ScopedTypeVariables #-}
 
-module Main where
+module Main (main) where
 
 import Prelude hiding (mod, div)
 
@@ -12,7 +12,6 @@ import Data.Default
 import System.FilePath ( (</>) )
 
 import Language.Sunroof
-import Language.Sunroof.Types
 import Language.Sunroof.JS.Canvas
 import Language.Sunroof.JS.Browser hiding ( eval )
 import Language.Sunroof.JS.JQuery
@@ -29,7 +28,7 @@ main = do
   -- Compile the JavaScript and also write it to the current directory.
   sunroofCompileJSA def "main" clockJS >>= writeFile "main.js"
 
-clockJS :: JS A (JSFunction () ())
+clockJS :: JS 'A (JSFunction () ())
 clockJS = function $ \() -> do
 
   -- Renders a single line (with number) of the clock face.
@@ -56,11 +55,11 @@ clockJS = function $ \() -> do
     c # restore
 
   -- Renders a single clock pointer.
-  renderClockPointer <- function $ \(c :: JSCanvas, u :: JSNumber, angle :: JSNumber, width :: JSNumber, len :: JSNumber) -> do
+  renderClockPointer <- function $ \(c :: JSCanvas, u :: JSNumber, angle :: JSNumber, width' :: JSNumber, len :: JSNumber) -> do
     c # save
     c # lineCap := "round"
     c # rotate angle
-    c # lineWidth := width
+    c # lineWidth := width'
     c # beginPath
     c # moveTo (0, u * 0.1)
     c # lineTo (0, -u * len)
@@ -89,8 +88,8 @@ clockJS = function $ \() -> do
     c # save
     c # rotate (2 * pi / 4) -- 0 degrees is at the top
     -- Draw all hour lines.
-    lines <- array [1..60::Int]
-    lines # forEach $ \n -> do
+    lines' <- array [1..60::Int]
+    lines' # forEach $ \n -> do
       c # save
       c # rotate ((2 * pi / 60) * n)
       renderClockFaceLine $$ (c, u, n)
@@ -119,9 +118,9 @@ clockJS = function $ \() -> do
     c # restore
     return ()
 
-  window # setInterval (goto renderClock) 1000
+  _ <- window # setInterval (goto renderClock) 1000
   -- and draw one now, rather than wait till later
-  goto renderClock ()
+  _ <- goto renderClock ()
 
   return ()
 

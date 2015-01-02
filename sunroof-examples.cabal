@@ -50,7 +50,7 @@ Executable sunroof-browser-info
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/browser-info
-    Ghc-Options: -threaded
+    Ghc-Options: -threaded -Wall
     default-language:    Haskell2010
 
 Executable sunroof-canvas
@@ -63,7 +63,7 @@ Executable sunroof-canvas
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/canvas
-    Ghc-Options: -threaded
+    Ghc-Options: -threaded -Wall
     default-language:    Haskell2010
 
 Executable sunroof-clock
@@ -76,7 +76,7 @@ Executable sunroof-clock
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/clock
-    Ghc-Options: -threaded
+    Ghc-Options: -threaded -Wall
     default-language:    Haskell2010
 
 
@@ -91,7 +91,7 @@ Executable sunroof-fib
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/fib
-    Ghc-Options: -threaded
+    Ghc-Options: -threaded -Wall
     default-language:    Haskell2010
 
 Executable sunroof-unit
@@ -111,7 +111,7 @@ Executable sunroof-unit
          
     Main-is: Main.hs
     Hs-Source-Dirs: examples/unit
-    Ghc-Options: -threaded
+    Ghc-Options: -threaded -Wall
     default-language:    Haskell2010
 
 Executable sunroof-inplace-shaker
@@ -122,6 +122,6 @@ Executable sunroof-inplace-shaker
         shake                  >= 0.10
 
     Main-is: Shake.hs
-    Ghc-Options: -threaded
+    Ghc-Options: -threaded -Wall
     default-language:    Haskell2010
  
