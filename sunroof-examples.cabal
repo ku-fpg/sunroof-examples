@@ -1,5 +1,5 @@
 Name:                sunroof-examples
-Version:             0.2.2
+Version:             0.2.3
 Synopsis:            Tests for Sunroof
 Homepage:            https://github.com/ku-fpg/sunroof-examples
 Bug-reports:         https://github.com/ku-fpg/sunroof-examples
@@ -32,7 +32,7 @@ data-files:
     examples/unit/index.html
 
 Extra-source-files:
-    README.md
+    CHANGELOG.md, README.md
 
 source-repository head
   type:     git
