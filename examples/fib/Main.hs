@@ -1,13 +1,13 @@
-{-# LANGUAGE CPP, OverloadedStrings, ScopedTypeVariables #-}
-#if MIN_VERSION_base(4,8,0)
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-#endif
 
 module Main (main) where
 
-import Data.Default ( Default(..) )
-import Data.Semigroup ( (<>) )
-import Control.Monad ( liftM2, void )
+import Data.Default.Class ( Default(..) )
+import Data.Semigroup     ( (<>) )
+import Control.Monad      ( liftM2, void )
 import Data.Boolean
 
 import Language.Sunroof
@@ -15,9 +15,7 @@ import Language.Sunroof.Server
 import Language.Sunroof.JS.JQuery
 import Paths_sunroof_examples
 
-#if MIN_VERSION_base(4,8,0)
-import Prelude hiding ((<*))
-#endif
+import Prelude.Compat hiding ((<*))
 
 main :: IO ()
 main = do

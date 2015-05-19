@@ -3,7 +3,7 @@
 
 module Main (main) where
 
-import Data.Default
+import Data.Default.Class
 import Data.Boolean
 
 import Language.Sunroof

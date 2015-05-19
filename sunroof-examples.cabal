@@ -45,7 +45,7 @@ Executable sunroof-browser-info
          sunroof-compiler       == 0.2.2,
          sunroof-server         == 0.2.2,
          semigroups             >= 0.9,
-         data-default           >= 0.5
+         data-default-class     == 0.0.*
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/browser-info
@@ -58,7 +58,7 @@ Executable sunroof-canvas
          sunroof-compiler       == 0.2.2,
          sunroof-server         == 0.2.2,
          Boolean                >= 0.2,
-         data-default           >= 0.5
+         data-default-class     == 0.0.*
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/canvas
@@ -70,7 +70,7 @@ Executable sunroof-clock
          base                   >= 4.6,
          sunroof-compiler       == 0.2.2,
          Boolean                >= 0.2,
-         data-default           >= 0.5,
+         data-default-class     == 0.0.*,
          filepath               >= 0.1
                   
     Main-is: Main.hs
@@ -82,11 +82,12 @@ Executable sunroof-clock
 Executable sunroof-fib
     Build-Depends: 
          base                   >= 4.6,
+         base-compat            >= 0.8.1 && < 1,
          sunroof-compiler       == 0.2.2,
          sunroof-server         == 0.2.2,
          Boolean                >= 0.2,
          semigroups             >= 0.9,
-         data-default           >= 0.5
+         data-default-class     == 0.0.*
                   
     Main-is: Main.hs
     Hs-Source-Dirs: examples/fib
@@ -99,9 +100,10 @@ Executable sunroof-unit
          sunroof-compiler       == 0.2.2,
          sunroof-server         == 0.2.2,
          Boolean                >= 0.2,
-         data-default           >= 0.5,
+         data-default-class     == 0.0.*,
          semigroups             >= 0.9,
-         base                   >= 4.3.1 && < 5,
+         base                   >= 4.6   && < 5,
+         base-compat            >= 0.8.1 && < 1,
          parallel-io            >= 0.3.3,
          QuickCheck             >= 2.6,
          containers             >= 0.5

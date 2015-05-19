@@ -7,7 +7,7 @@ import Prelude hiding (mod, div)
 import Data.Monoid
 import Data.Boolean
 import Data.Boolean.Numbers
-import Data.Default
+import Data.Default.Class
 
 import System.FilePath ( (</>) )
 

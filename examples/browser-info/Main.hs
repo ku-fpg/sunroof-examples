@@ -2,8 +2,8 @@
 
 module Main (main) where
 
-import Data.Default ( Default(..) )
-import Data.Semigroup ( (<>) )
+import Data.Default.Class ( Default(..) )
+import Data.Semigroup     ( (<>) )
 
 import Language.Sunroof
 import Language.Sunroof.Server

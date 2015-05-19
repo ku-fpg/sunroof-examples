@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -12,18 +12,16 @@
 
 module Main (main) where
 
-import Prelude hiding
+import Prelude.Compat as Prelude hiding
     ( mod
     , div
-#if MIN_VERSION_base(4,8,0)
     , (<*)
-#endif
     )
 
 import Data.Semigroup
 import Data.Boolean
 import Data.Boolean.Numbers hiding (floor, round)
-import Data.Default
+import Data.Default.Class
 import Data.Maybe ( isJust )
 import qualified Data.Map as Map
 
